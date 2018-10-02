@@ -274,7 +274,7 @@ private:
     // If _M_SingleFrame != nullptr, there will be only one frame of callstacks, which is stored in _M_SingleFrame;
     // otherwise, _M_Frame will store all the callstack frames.
     void* _M_SingleFrame;
-    std::vector<void*> _M_frames;
+    utility::vector<void*> _M_frames;
 
 public:
     _TaskCreationCallstack() { _M_SingleFrame = nullptr; }
@@ -864,9 +864,9 @@ struct _ResultHolder<_Type ^>
 // The below are for composability with tasks auto-created from when_any / when_all / && / || constructs.
 //
 template<typename _Type>
-struct _ResultHolder<std::vector<_Type ^>>
+struct _ResultHolder<utility::vector<_Type ^>>
 {
-    void Set(const std::vector<_Type ^>& _type)
+    void Set(const utility::vector<_Type ^>& _type)
     {
         _Result.reserve(_type.size());
 
@@ -876,10 +876,10 @@ struct _ResultHolder<std::vector<_Type ^>>
         }
     }
 
-    std::vector<_Type ^> Get()
+    utility::vector<_Type ^> Get()
     {
         // Return vectory<T^> with the objects that are marshaled in the proper apartment
-        std::vector<_Type ^> _Return;
+        utility::vector<_Type ^> _Return;
         _Return.reserve(_Result.size());
 
         for (auto _PTask = _Result.begin(); _PTask != _Result.end(); ++_PTask)
@@ -891,7 +891,7 @@ struct _ResultHolder<std::vector<_Type ^>>
         return _Return;
     }
 
-    std::vector<::Platform::Agile<_Type ^>> _Result;
+    utility::vector<::Platform::Agile<_Type ^>> _Result;
 };
 
 template<typename _Type>
@@ -1400,7 +1400,7 @@ struct _Task_ptr
     typedef std::shared_ptr<_Task_impl<_ReturnType>> _Type;
     static _Type _Make(_CancellationTokenState* _Ct, scheduler_ptr _Scheduler_arg)
     {
-        return std::make_shared<_Task_impl<_ReturnType>>(_Ct, _Scheduler_arg);
+        return utility::make_shared<_Task_impl<_ReturnType>>(_Ct, _Scheduler_arg);
     }
 };
 
@@ -1884,7 +1884,7 @@ struct _Task_impl_base
         // This task was canceled because the task body encountered an exception.
         _ASSERTE(!_HasUserException());
         return _CancelAndRunContinuations(
-            true, true, false, std::make_shared<_ExceptionHolder>(_Exception, _GetTaskCreationCallstack()));
+            true, true, false, utility::make_shared<_ExceptionHolder>(_Exception, _GetTaskCreationCallstack()));
     }
 #endif /* defined (__cplusplus_winrt) */
 
@@ -1893,7 +1893,7 @@ struct _Task_impl_base
         // This task was canceled because the task body encountered an exception.
         _ASSERTE(!_HasUserException());
         return _CancelAndRunContinuations(
-            true, true, false, std::make_shared<_ExceptionHolder>(_Exception, _GetTaskCreationCallstack()));
+            true, true, false, utility::make_shared<_ExceptionHolder>(_Exception, _GetTaskCreationCallstack()));
     }
 
     void _RegisterCancellation(std::weak_ptr<_Task_impl_base> _WeakPtr)
@@ -2598,7 +2598,7 @@ private:
     _Task_completion_event_impl& operator=(const _Task_completion_event_impl&);
 
 public:
-    typedef std::vector<typename _Task_ptr<_ResultType>::_Type> _TaskList;
+    typedef utility::vector<typename _Task_ptr<_ResultType>::_Type> _TaskList;
 
     _Task_completion_event_impl() : _M_fHasValue(false), _M_fIsCanceled(false) {}
 
@@ -2682,7 +2682,7 @@ public:
     ///     Constructs a <c>task_completion_event</c> object.
     /// </summary>
     /**/
-    task_completion_event() : _M_Impl(std::make_shared<details::_Task_completion_event_impl<_ResultType>>()) {}
+    task_completion_event() : _M_Impl(utility::make_shared<details::_Task_completion_event_impl<_ResultType>>()) {}
 
     /// <summary>
     ///     Sets the task completion event.
@@ -2847,7 +2847,7 @@ private:
     static std::shared_ptr<details::_ExceptionHolder> _ToExceptionHolder(
         std::exception_ptr _ExceptionPtr, const details::_TaskCreationCallstack& _SetExceptionAddressHint)
     {
-        return std::make_shared<details::_ExceptionHolder>(_ExceptionPtr, _SetExceptionAddressHint);
+        return utility::make_shared<details::_ExceptionHolder>(_ExceptionPtr, _SetExceptionAddressHint);
     }
 
     template<typename T>
@@ -3125,7 +3125,7 @@ struct _NonCopyableFunctorWrapper
     template<typename _Tx,
              typename = typename std::enable_if<
                  !std::is_base_of<_NonCopyableFunctorWrapper<_Ty>, typename std::decay<_Tx>::type>::value>::type>
-    explicit _NonCopyableFunctorWrapper(_Tx&& f) : _M_functor {std::make_shared<_Ty>(std::forward<_Tx>(f))}
+    explicit _NonCopyableFunctorWrapper(_Tx&& f) : _M_functor {utility::make_shared<_Ty>(std::forward<_Tx>(f))}
     {
     }
 
@@ -6471,14 +6471,14 @@ template<typename _Function>
         }
 
         task_completion_event<_Unit_type> _M_completed;
-        _ResultHolder<std::vector<_Type>> _M_vector;
+        _ResultHolder<utility::vector<_Type>> _M_vector;
         _ResultHolder<_Type> _M_mergeVal;
         atomic_size_t _M_completeCount;
         size_t _M_numTasks;
     };
 
     template<typename _Type>
-    struct _RunAllParam<std::vector<_Type>>
+    struct _RunAllParam<utility::vector<_Type>>
     {
         _RunAllParam() : _M_completeCount(0), _M_numTasks(0) {}
 
@@ -6493,7 +6493,7 @@ template<typename _Function>
         }
 
         task_completion_event<_Unit_type> _M_completed;
-        std::vector<_ResultHolder<std::vector<_Type>>> _M_vector;
+        utility::vector<_ResultHolder<utility::vector<_Type>>> _M_vector;
         atomic_size_t _M_completeCount;
         size_t _M_numTasks;
     };
@@ -6558,7 +6558,7 @@ template<typename _Function>
     template<typename _ElementType, typename _Iterator>
     struct _WhenAllImpl
     {
-        static task<std::vector<_ElementType>> _Perform(const task_options& _TaskOptions,
+        static task<utility::vector<_ElementType>> _Perform(const task_options& _TaskOptions,
                                                         _Iterator _Begin,
                                                         _Iterator _End)
         {
@@ -6574,7 +6574,7 @@ template<typename _Function>
             task<_Unit_type> _All_tasks_completed(_PParam->_M_completed, _Options);
             // The return task must be created before step 3 to enforce inline execution.
             auto _ReturnTask = _All_tasks_completed._Then(
-                [=](_Unit_type) -> std::vector<_ElementType> { return _PParam->_M_vector.Get(); }, nullptr);
+                [=](_Unit_type) -> utility::vector<_ElementType> { return _PParam->_M_vector.Get(); }, nullptr);
 
             // Step2: Combine and check tokens, and count elements in range.
             if (_PTokenState)
@@ -6630,16 +6630,16 @@ template<typename _Function>
     };
 
     template<typename _ElementType, typename _Iterator>
-    struct _WhenAllImpl<std::vector<_ElementType>, _Iterator>
+    struct _WhenAllImpl<utility::vector<_ElementType>, _Iterator>
     {
-        static task<std::vector<_ElementType>> _Perform(const task_options& _TaskOptions,
+        static task<utility::vector<_ElementType>> _Perform(const task_options& _TaskOptions,
                                                         _Iterator _Begin,
                                                         _Iterator _End)
         {
             _CancellationTokenState* _PTokenState =
                 _TaskOptions.has_cancellation_token() ? _TaskOptions.get_cancellation_token()._GetImplValue() : nullptr;
 
-            auto _PParam = new _RunAllParam<std::vector<_ElementType>>();
+            auto _PParam = new _RunAllParam<utility::vector<_ElementType>>();
             cancellation_token_source _MergedSource;
 
             // Step1: Create task completion event.
@@ -6648,12 +6648,12 @@ template<typename _Function>
             task<_Unit_type> _All_tasks_completed(_PParam->_M_completed, _Options);
             // The return task must be created before step 3 to enforce inline execution.
             auto _ReturnTask = _All_tasks_completed._Then(
-                [=](_Unit_type) -> std::vector<_ElementType> {
+                [=](_Unit_type) -> utility::vector<_ElementType> {
                     _ASSERTE(_PParam->_M_completeCount == _PParam->_M_numTasks);
-                    std::vector<_ElementType> _Result;
+                    utility::vector<_ElementType> _Result;
                     for (size_t _I = 0; _I < _PParam->_M_numTasks; _I++)
                     {
-                        const std::vector<_ElementType>& _Vec = _PParam->_M_vector[_I].Get();
+                        const utility::vector<_ElementType>& _Vec = _PParam->_M_vector[_I].Get();
                         _Result.insert(_Result.end(), _Vec.begin(), _Vec.end());
                     }
                     return _Result;
@@ -6694,7 +6694,7 @@ template<typename _Function>
                     }
 
                     _PTask->_Then(
-                        [_PParam, _Index](task<std::vector<_ElementType>> _ResultTask) {
+                        [_PParam, _Index](task<utility::vector<_ElementType>> _ResultTask) {
                             auto _PParamCopy = _PParam;
                             auto _IndexCopy = _Index;
                             auto _Func = [_PParamCopy, _IndexCopy, &_ResultTask]() {
@@ -6777,8 +6777,8 @@ template<typename _Function>
     };
 
     template<typename _ReturnType>
-    task<std::vector<_ReturnType>> _WhenAllVectorAndValue(
-        const task<std::vector<_ReturnType>>& _VectorTask, const task<_ReturnType>& _ValueTask, bool _OutputVectorFirst)
+    task<utility::vector<_ReturnType>> _WhenAllVectorAndValue(
+        const task<utility::vector<_ReturnType>>& _VectorTask, const task<_ReturnType>& _ValueTask, bool _OutputVectorFirst)
     {
         auto _PParam = new _RunAllParam<_ReturnType>();
         cancellation_token_source _MergedSource;
@@ -6787,7 +6787,7 @@ template<typename _Function>
         task<_Unit_type> _All_tasks_completed(_PParam->_M_completed, _MergedSource.get_token());
         // The return task must be created before step 3 to enforce inline execution.
         auto _ReturnTask = _All_tasks_completed._Then(
-            [=](_Unit_type) -> std::vector<_ReturnType> {
+            [=](_Unit_type) -> utility::vector<_ReturnType> {
                 _ASSERTE(_PParam->_M_completeCount == 2);
                 auto _Result = _PParam->_M_vector.Get(); // copy by value
                 auto _mergeVal = _PParam->_M_mergeVal.Get();
@@ -6816,7 +6816,7 @@ template<typename _Function>
             _ReturnTask._SetAsync();
         }
         _VectorTask._Then(
-            [_PParam](task<std::vector<_ReturnType>> _ResultTask) {
+            [_PParam](task<utility::vector<_ReturnType>> _ResultTask) {
                 auto _PParamCopy = _PParam;
                 auto _Func = [_PParamCopy, &_ResultTask]() {
                     auto _ResultLocal = _ResultTask._GetImpl()->_GetResult();
@@ -6857,7 +6857,7 @@ template<typename _Function>
 /// </param>
 /// <returns>
 ///     A task that completes successfully when all of the input tasks have completed successfully. If the input tasks
-///     are of type <c>T</c>, the output of this function will be a <c>task&lt;std::vector&lt;T&gt;&gt;</c>. If the
+///     are of type <c>T</c>, the output of this function will be a <c>task&lt;utility::vector&lt;T&gt;&gt;</c>. If the
 ///     input tasks are of type <c>void</c> the output task will also be a <c>task&lt;void&gt;</c>.
 /// </returns>
 /// <remarks>
@@ -6891,11 +6891,11 @@ auto when_all(_Iterator _Begin, _Iterator _End, const task_options& _TaskOptions
 /// </param>
 /// <returns>
 ///     A task that completes successfully when both of the input tasks have completed successfully. If the input tasks
-///     are of type <c>T</c>, the output of this function will be a <c>task&lt;std::vector&lt;T&gt;&gt;</c>. If the
+///     are of type <c>T</c>, the output of this function will be a <c>task&lt;utility::vector&lt;T&gt;&gt;</c>. If the
 ///     input tasks are of type <c>void</c> the output task will also be a <c>task&lt;void&gt;</c>. <para> To allow for
 ///     a construct of the sort taskA &amp;&amp; taskB &amp;&amp; taskC, which are combined in pairs, the &amp;&amp;
-///     operator produces a <c>task&lt;std::vector&lt;T&gt;&gt;</c> if either one or both of the tasks are of type
-///     <c>task&lt;std::vector&lt;T&gt;&gt;</c>.</para>
+///     operator produces a <c>task&lt;utility::vector&lt;T&gt;&gt;</c> if either one or both of the tasks are of type
+///     <c>task&lt;utility::vector&lt;T&gt;&gt;</c>.</para>
 /// </returns>
 /// <remarks>
 ///     If one of the tasks is canceled or throws an exception, the returned task will complete early, in the canceled
@@ -6926,11 +6926,11 @@ auto operator&&(const task<_ReturnType>& _Lhs, const task<_ReturnType>& _Rhs) ->
 /// </param>
 /// <returns>
 ///     A task that completes successfully when both of the input tasks have completed successfully. If the input tasks
-///     are of type <c>T</c>, the output of this function will be a <c>task&lt;std::vector&lt;T&gt;&gt;</c>. If the
+///     are of type <c>T</c>, the output of this function will be a <c>task&lt;utility::vector&lt;T&gt;&gt;</c>. If the
 ///     input tasks are of type <c>void</c> the output task will also be a <c>task&lt;void&gt;</c>. <para> To allow for
 ///     a construct of the sort taskA &amp;&amp; taskB &amp;&amp; taskC, which are combined in pairs, the &amp;&amp;
-///     operator produces a <c>task&lt;std::vector&lt;T&gt;&gt;</c> if either one or both of the tasks are of type
-///     <c>task&lt;std::vector&lt;T&gt;&gt;</c>.</para>
+///     operator produces a <c>task&lt;utility::vector&lt;T&gt;&gt;</c> if either one or both of the tasks are of type
+///     <c>task&lt;utility::vector&lt;T&gt;&gt;</c>.</para>
 /// </returns>
 /// <remarks>
 ///     If one of the tasks is canceled or throws an exception, the returned task will complete early, in the canceled
@@ -6940,7 +6940,7 @@ auto operator&&(const task<_ReturnType>& _Lhs, const task<_ReturnType>& _Rhs) ->
 /// <seealso cref="Task Parallelism (Concurrency Runtime)"/>
 /**/
 template<typename _ReturnType>
-auto operator&&(const task<std::vector<_ReturnType>>& _Lhs, const task<_ReturnType>& _Rhs)
+auto operator&&(const task<utility::vector<_ReturnType>>& _Lhs, const task<_ReturnType>& _Rhs)
     -> decltype(details::_WhenAllVectorAndValue(_Lhs, _Rhs, true))
 {
     return details::_WhenAllVectorAndValue(_Lhs, _Rhs, true);
@@ -6961,11 +6961,11 @@ auto operator&&(const task<std::vector<_ReturnType>>& _Lhs, const task<_ReturnTy
 /// </param>
 /// <returns>
 ///     A task that completes successfully when both of the input tasks have completed successfully. If the input tasks
-///     are of type <c>T</c>, the output of this function will be a <c>task&lt;std::vector&lt;T&gt;&gt;</c>. If the
+///     are of type <c>T</c>, the output of this function will be a <c>task&lt;utility::vector&lt;T&gt;&gt;</c>. If the
 ///     input tasks are of type <c>void</c> the output task will also be a <c>task&lt;void&gt;</c>. <para> To allow for
 ///     a construct of the sort taskA &amp;&amp; taskB &amp;&amp; taskC, which are combined in pairs, the &amp;&amp;
-///     operator produces a <c>task&lt;std::vector&lt;T&gt;&gt;</c> if either one or both of the tasks are of type
-///     <c>task&lt;std::vector&lt;T&gt;&gt;</c>.</para>
+///     operator produces a <c>task&lt;utility::vector&lt;T&gt;&gt;</c> if either one or both of the tasks are of type
+///     <c>task&lt;utility::vector&lt;T&gt;&gt;</c>.</para>
 /// </returns>
 /// <remarks>
 ///     If one of the tasks is canceled or throws an exception, the returned task will complete early, in the canceled
@@ -6975,7 +6975,7 @@ auto operator&&(const task<std::vector<_ReturnType>>& _Lhs, const task<_ReturnTy
 /// <seealso cref="Task Parallelism (Concurrency Runtime)"/>
 /**/
 template<typename _ReturnType>
-auto operator&&(const task<_ReturnType>& _Lhs, const task<std::vector<_ReturnType>>& _Rhs)
+auto operator&&(const task<_ReturnType>& _Lhs, const task<utility::vector<_ReturnType>>& _Rhs)
     -> decltype(details::_WhenAllVectorAndValue(_Rhs, _Lhs, false))
 {
     return details::_WhenAllVectorAndValue(_Rhs, _Lhs, false);
@@ -6996,11 +6996,11 @@ auto operator&&(const task<_ReturnType>& _Lhs, const task<std::vector<_ReturnTyp
 /// </param>
 /// <returns>
 ///     A task that completes successfully when both of the input tasks have completed successfully. If the input tasks
-///     are of type <c>T</c>, the output of this function will be a <c>task&lt;std::vector&lt;T&gt;&gt;</c>. If the
+///     are of type <c>T</c>, the output of this function will be a <c>task&lt;utility::vector&lt;T&gt;&gt;</c>. If the
 ///     input tasks are of type <c>void</c> the output task will also be a <c>task&lt;void&gt;</c>. <para> To allow for
 ///     a construct of the sort taskA &amp;&amp; taskB &amp;&amp; taskC, which are combined in pairs, the &amp;&amp;
-///     operator produces a <c>task&lt;std::vector&lt;T&gt;&gt;</c> if either one or both of the tasks are of type
-///     <c>task&lt;std::vector&lt;T&gt;&gt;</c>.</para>
+///     operator produces a <c>task&lt;utility::vector&lt;T&gt;&gt;</c> if either one or both of the tasks are of type
+///     <c>task&lt;utility::vector&lt;T&gt;&gt;</c>.</para>
 /// </returns>
 /// <remarks>
 ///     If one of the tasks is canceled or throws an exception, the returned task will complete early, in the canceled
@@ -7010,10 +7010,10 @@ auto operator&&(const task<_ReturnType>& _Lhs, const task<std::vector<_ReturnTyp
 /// <seealso cref="Task Parallelism (Concurrency Runtime)"/>
 /**/
 template<typename _ReturnType>
-auto operator&&(const task<std::vector<_ReturnType>>& _Lhs, const task<std::vector<_ReturnType>>& _Rhs)
+auto operator&&(const task<utility::vector<_ReturnType>>& _Lhs, const task<utility::vector<_ReturnType>>& _Rhs)
     -> decltype(when_all(&_Lhs, &_Lhs))
 {
-    task<std::vector<_ReturnType>> _PTasks[2] = {_Lhs, _Rhs};
+    task<utility::vector<_ReturnType>> _PTasks[2] = {_Lhs, _Rhs};
     return when_all(_PTasks, _PTasks + 2);
 }
 
@@ -7314,11 +7314,11 @@ auto when_any(_Iterator _Begin, _Iterator _End, cancellation_token _Cancellation
 /// </param>
 /// <returns>
 ///     A task that completes successfully when either of the input tasks has completed successfully. If the input tasks
-///     are of type <c>T</c>, the output of this function will be a <c>task&lt;std::vector&lt;T&gt;</c>. If the input
+///     are of type <c>T</c>, the output of this function will be a <c>task&lt;utility::vector&lt;T&gt;</c>. If the input
 ///     tasks are of type <c>void</c> the output task will also be a <c>task&lt;void&gt;</c>. <para> To allow for a
 ///     construct of the sort taskA || taskB &amp;&amp; taskC, which are combined in pairs, with &amp;&amp; taking
-///     precedence over ||, the operator|| produces a <c>task&lt;std::vector&lt;T&gt;&gt;</c> if one of the tasks is of
-///     type <c>task&lt;std::vector&lt;T&gt;&gt;</c> and the other one is of type <c>task&lt;T&gt;.</c></para>
+///     precedence over ||, the operator|| produces a <c>task&lt;utility::vector&lt;T&gt;&gt;</c> if one of the tasks is of
+///     type <c>task&lt;utility::vector&lt;T&gt;&gt;</c> and the other one is of type <c>task&lt;T&gt;.</c></para>
 /// </returns>
 /// <remarks>
 ///     If both of the tasks are canceled or throw exceptions, the returned task will complete in the canceled state,
@@ -7383,11 +7383,11 @@ task<_ReturnType> operator||(const task<_ReturnType>& _Lhs, const task<_ReturnTy
 /// </param>
 /// <returns>
 ///     A task that completes successfully when either of the input tasks has completed successfully. If the input tasks
-///     are of type <c>T</c>, the output of this function will be a <c>task&lt;std::vector&lt;T&gt;</c>. If the input
+///     are of type <c>T</c>, the output of this function will be a <c>task&lt;utility::vector&lt;T&gt;</c>. If the input
 ///     tasks are of type <c>void</c> the output task will also be a <c>task&lt;void&gt;</c>. <para> To allow for a
 ///     construct of the sort taskA || taskB &amp;&amp; taskC, which are combined in pairs, with &amp;&amp; taking
-///     precedence over ||, the operator|| produces a <c>task&lt;std::vector&lt;T&gt;&gt;</c> if one of the tasks is of
-///     type <c>task&lt;std::vector&lt;T&gt;&gt;</c> and the other one is of type <c>task&lt;T&gt;.</c></para>
+///     precedence over ||, the operator|| produces a <c>task&lt;utility::vector&lt;T&gt;&gt;</c> if one of the tasks is of
+///     type <c>task&lt;utility::vector&lt;T&gt;&gt;</c> and the other one is of type <c>task&lt;T&gt;.</c></para>
 /// </returns>
 /// <remarks>
 ///     If both of the tasks are canceled or throw exceptions, the returned task will complete in the canceled state,
@@ -7397,17 +7397,17 @@ task<_ReturnType> operator||(const task<_ReturnType>& _Lhs, const task<_ReturnTy
 /// <seealso cref="Task Parallelism (Concurrency Runtime)"/>
 /**/
 template<typename _ReturnType>
-task<std::vector<_ReturnType>> operator||(const task<std::vector<_ReturnType>>& _Lhs, const task<_ReturnType>& _Rhs)
+task<utility::vector<_ReturnType>> operator||(const task<utility::vector<_ReturnType>>& _Lhs, const task<_ReturnType>& _Rhs)
 {
-    auto _PParam = new details::_RunAnyParam<std::pair<std::vector<_ReturnType>, details::_CancellationTokenState*>>();
+    auto _PParam = new details::_RunAnyParam<std::pair<utility::vector<_ReturnType>, details::_CancellationTokenState*>>();
 
-    task<std::pair<std::vector<_ReturnType>, details::_CancellationTokenState*>> _Any_tasks_completed(
+    task<std::pair<utility::vector<_ReturnType>, details::_CancellationTokenState*>> _Any_tasks_completed(
         _PParam->_M_Completed, _PParam->_M_cancellationSource.get_token());
 
     // Chain the return continuation task here to ensure it will get inline execution when _M_Completed.set is called,
     // So that _PParam can be used before it getting deleted.
     auto _ReturnTask = _Any_tasks_completed._Then(
-        [=](std::pair<std::vector<_ReturnType>, details::_CancellationTokenState*> _Ret) -> std::vector<_ReturnType> {
+        [=](std::pair<utility:vector<_ReturnType>, details::_CancellationTokenState*> _Ret) -> utility::vector<_ReturnType> {
             _ASSERTE(_Ret.second);
             _JoinAllTokens_Add(_PParam->_M_cancellationSource, _Ret.second);
             return _Ret.first;
@@ -7421,7 +7421,7 @@ task<std::vector<_ReturnType>> operator||(const task<std::vector<_ReturnType>>& 
 
     _PParam->_M_numTasks = 2;
     _Lhs._Then(
-        [_PParam](task<std::vector<_ReturnType>> _ResultTask) {
+        [_PParam](task<utility::vector<_ReturnType>> _ResultTask) {
             //  Dev10 compiler bug
             auto _PParamCopy = _PParam;
             auto _Func = [&_ResultTask, _PParamCopy]() {
@@ -7438,7 +7438,7 @@ task<std::vector<_ReturnType>> operator||(const task<std::vector<_ReturnType>>& 
             auto _Func = [&_ResultTask, _PParamCopy]() {
                 auto _Result = _ResultTask._GetImpl()->_GetResult();
 
-                std::vector<_ReturnType> _Vec;
+                utility::vector<_ReturnType> _Vec;
                 _Vec.push_back(_Result);
                 _PParamCopy->_M_Completed.set(std::make_pair(_Vec, _ResultTask._GetImpl()->_M_pTokenState));
             };
@@ -7464,11 +7464,11 @@ task<std::vector<_ReturnType>> operator||(const task<std::vector<_ReturnType>>& 
 /// </param>
 /// <returns>
 ///     A task that completes successfully when either of the input tasks has completed successfully. If the input tasks
-///     are of type <c>T</c>, the output of this function will be a <c>task&lt;std::vector&lt;T&gt;</c>. If the input
+///     are of type <c>T</c>, the output of this function will be a <c>task&lt;utility::vector&lt;T&gt;</c>. If the input
 ///     tasks are of type <c>void</c> the output task will also be a <c>task&lt;void&gt;</c>. <para> To allow for a
 ///     construct of the sort taskA || taskB &amp;&amp; taskC, which are combined in pairs, with &amp;&amp; taking
-///     precedence over ||, the operator|| produces a <c>task&lt;std::vector&lt;T&gt;&gt;</c> if one of the tasks is of
-///     type <c>task&lt;std::vector&lt;T&gt;&gt;</c> and the other one is of type <c>task&lt;T&gt;.</c></para>
+///     precedence over ||, the operator|| produces a <c>task&lt;utility::vector&lt;T&gt;&gt;</c> if one of the tasks is of
+///     type <c>task&lt;utility::vector&lt;T&gt;&gt;</c> and the other one is of type <c>task&lt;T&gt;.</c></para>
 /// </returns>
 /// <remarks>
 ///     If both of the tasks are canceled or throw exceptions, the returned task will complete in the canceled state,
@@ -7478,7 +7478,7 @@ task<std::vector<_ReturnType>> operator||(const task<std::vector<_ReturnType>>& 
 /// <seealso cref="Task Parallelism (Concurrency Runtime)"/>
 /**/
 template<typename _ReturnType>
-auto operator||(const task<_ReturnType>& _Lhs, const task<std::vector<_ReturnType>>& _Rhs) -> decltype(_Rhs || _Lhs)
+auto operator||(const task<_ReturnType>& _Lhs, const task<utility::vector<_ReturnType>>& _Rhs) -> decltype(_Rhs || _Lhs)
 {
     return _Rhs || _Lhs;
 }
@@ -7498,11 +7498,11 @@ auto operator||(const task<_ReturnType>& _Lhs, const task<std::vector<_ReturnTyp
 /// </param>
 /// <returns>
 ///     A task that completes successfully when either of the input tasks has completed successfully. If the input tasks
-///     are of type <c>T</c>, the output of this function will be a <c>task&lt;std::vector&lt;T&gt;</c>. If the input
+///     are of type <c>T</c>, the output of this function will be a <c>task&lt;utility::vector&lt;T&gt;</c>. If the input
 ///     tasks are of type <c>void</c> the output task will also be a <c>task&lt;void&gt;</c>. <para> To allow for a
 ///     construct of the sort taskA || taskB &amp;&amp; taskC, which are combined in pairs, with &amp;&amp; taking
-///     precedence over ||, the operator|| produces a <c>task&lt;std::vector&lt;T&gt;&gt;</c> if one of the tasks is of
-///     type <c>task&lt;std::vector&lt;T&gt;&gt;</c> and the other one is of type <c>task&lt;T&gt;.</c></para>
+///     precedence over ||, the operator|| produces a <c>task&lt;utility::vector&lt;T&gt;&gt;</c> if one of the tasks is of
+///     type <c>task&lt;utility::vector&lt;T&gt;&gt;</c> and the other one is of type <c>task&lt;T&gt;.</c></para>
 /// </returns>
 /// <remarks>
 ///     If both of the tasks are canceled or throw exceptions, the returned task will complete in the canceled state,
