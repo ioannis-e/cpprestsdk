@@ -83,7 +83,7 @@ bool bind_impl(const key_type& text, utf16string& ref)
 }
 
 template<typename key_type>
-bool bind_impl(const key_type& text, std::string& ref)
+bool bind_impl(const key_type& text, utility::string& ref)
 {
     ref = utility::conversions::to_utf8string(text);
     return true;
@@ -106,7 +106,7 @@ public:
     };
 
 private:
-    typedef std::map<utility::string_t, utility::string_t, _case_insensitive_cmp> inner_container;
+    typedef utility::map<utility::string_t, utility::string_t, _case_insensitive_cmp> inner_container;
 
 public:
     /// <summary>

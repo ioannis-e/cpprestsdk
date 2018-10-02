@@ -68,7 +68,7 @@ endianness check_byte_order_mark(const utf16string& str)
     return unknown;
 }
 
-std::string convert_utf16le_to_utf8(utf16string src, bool erase_bom)
+utility::string convert_utf16le_to_utf8(utf16string src, bool erase_bom)
 {
     if (erase_bom && !src.empty())
     {
@@ -113,7 +113,7 @@ utf16string big_endian_to_little_endian(utf16string src, bool erase_bom)
     return src;
 }
 
-std::string convert_utf16be_to_utf8(utf16string src, bool erase_bom)
+utility::string convert_utf16be_to_utf8(utf16string src, bool erase_bom)
 {
     return utf16_to_utf8(big_endian_to_little_endian(std::move(src), erase_bom));
 }
@@ -132,7 +132,7 @@ utility::string_t convert_utf16be_to_string_t(utf16string src, bool erase_bom)
 #endif
 }
 
-std::string convert_utf16_to_utf8(utf16string src)
+utility::string convert_utf16_to_utf8(utf16string src)
 {
     const endianness endian = check_byte_order_mark(src);
     switch (endian)
@@ -249,12 +249,12 @@ void parse_headers_string(_Inout_z_ utility::char_t* headersStr, web::http::http
 
 } // namespace details
 
-http_version __cdecl http_version::from_string(const std::string& http_version_string)
+http_version __cdecl http_version::from_string(const utility::string& http_version_string)
 {
-    std::istringstream str(http_version_string);
+    utility::istringstream str(http_version_string);
     str.imbue(std::locale::classic());
 
-    std::string http;
+    utility::string http;
     std::getline(str, http, '/');
     unsigned int major = 0;
     str >> major;
@@ -271,14 +271,14 @@ http_version __cdecl http_version::from_string(const std::string& http_version_s
     return {0, 0};
 }
 
-std::string http_version::to_utf8string() const
+utility::string http_version::to_utf8string() const
 {
-    std::string ret;
+    utility::string ret;
     ret.reserve(8);
     ret.append("HTTP/");
-    ret.append(std::to_string(static_cast<unsigned int>(major)));
+    ret.append(utility::conversions::details::to_string(static_cast<unsigned int>(major)));
     ret.append(".");
-    ret.append(std::to_string(static_cast<unsigned int>(minor)));
+    ret.append(utility::conversions::details::to_string(static_cast<unsigned int>(minor)));
     return ret;
 }
 
@@ -682,8 +682,8 @@ utf8string details::http_msg_base::extract_utf8string(bool ignore_content_type)
         utility::details::str_iequal(charset, charset_types::usascii) ||
         utility::details::str_iequal(charset, charset_types::ascii))
     {
-        std::string body;
-        body.resize((std::string::size_type)buf_r.in_avail());
+        utility::string body;
+        body.resize((utility::string::size_type)buf_r.in_avail());
         buf_r.getn(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(body.data())), body.size())
             .get(); // There is no risk of blocking.
         return body;
@@ -692,8 +692,8 @@ utf8string details::http_msg_base::extract_utf8string(bool ignore_content_type)
     // Latin1
     else if (utility::details::str_iequal(charset, charset_types::latin1))
     {
-        std::string body;
-        body.resize((std::string::size_type)buf_r.in_avail());
+        utility::string body;
+        body.resize((utility::string::size_type)buf_r.in_avail());
         buf_r.getn(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(body.data())), body.size())
             .get(); // There is no risk of blocking.
         return latin1_to_utf8(std::move(body));
@@ -759,8 +759,8 @@ utf16string details::http_msg_base::extract_utf16string(bool ignore_content_type
              utility::details::str_iequal(charset, charset_types::usascii) ||
              utility::details::str_iequal(charset, charset_types::ascii))
     {
-        std::string body;
-        body.resize((std::string::size_type)buf_r.in_avail());
+        utility::string body;
+        body.resize((utility::string::size_type)buf_r.in_avail());
         buf_r.getn(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(body.data())), body.size())
             .get(); // There is no risk of blocking.
         return utility::conversions::utf8_to_utf16(std::move(body));
@@ -769,8 +769,8 @@ utf16string details::http_msg_base::extract_utf16string(bool ignore_content_type
     // Latin1
     else if (utility::details::str_iequal(charset, charset_types::latin1))
     {
-        std::string body;
-        body.resize((std::string::size_type)buf_r.in_avail());
+        utility::string body;
+        body.resize((utility::string::size_type)buf_r.in_avail());
         buf_r.getn(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(body.data())), body.size())
             .get(); // There is no risk of blocking.
         return latin1_to_utf16(std::move(body));
@@ -815,8 +815,8 @@ utility::string_t details::http_msg_base::extract_string(bool ignore_content_typ
     if (utility::details::str_iequal(charset, charset_types::usascii) ||
         utility::details::str_iequal(charset, charset_types::ascii))
     {
-        std::string body;
-        body.resize((std::string::size_type)buf_r.in_avail());
+        utility::string body;
+        body.resize((utility::string::size_type)buf_r.in_avail());
         buf_r.getn(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(body.data())), body.size())
             .get(); // There is no risk of blocking.
         return to_string_t(std::move(body));
@@ -825,8 +825,8 @@ utility::string_t details::http_msg_base::extract_string(bool ignore_content_typ
     // Latin1
     if (utility::details::str_iequal(charset, charset_types::latin1))
     {
-        std::string body;
-        body.resize((std::string::size_type)buf_r.in_avail());
+        utility::string body;
+        body.resize((utility::string::size_type)buf_r.in_avail());
         buf_r.getn(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(body.data())), body.size())
             .get(); // There is no risk of blocking.
         // Could optimize for linux in the future if a latin1_to_utf8 function was written.
@@ -836,8 +836,8 @@ utility::string_t details::http_msg_base::extract_string(bool ignore_content_typ
     // utf-8.
     else if (utility::details::str_iequal(charset, charset_types::utf8))
     {
-        std::string body;
-        body.resize((std::string::size_type)buf_r.in_avail());
+        utility::string body;
+        body.resize((utility::string::size_type)buf_r.in_avail());
         buf_r.getn(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(body.data())), body.size())
             .get(); // There is no risk of blocking.
         return to_string_t(std::move(body));
@@ -891,7 +891,7 @@ json::value details::http_msg_base::_extract_json(bool ignore_content_type)
     // Latin1
     if (utility::details::str_iequal(charset, charset_types::latin1))
     {
-        std::string body;
+        utility::string body;
         body.resize(buf_r.in_avail());
         buf_r.getn(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(body.data())), body.size())
             .get(); // There is no risk of blocking.
@@ -904,7 +904,7 @@ json::value details::http_msg_base::_extract_json(bool ignore_content_type)
              utility::details::str_iequal(charset, charset_types::usascii) ||
              utility::details::str_iequal(charset, charset_types::ascii))
     {
-        std::string body;
+        utility::string body;
         body.resize(buf_r.in_avail());
         buf_r.getn(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(body.data())), body.size())
             .get(); // There is no risk of blocking.
@@ -947,14 +947,14 @@ json::value details::http_msg_base::_extract_json(bool ignore_content_type)
     }
 }
 
-std::vector<uint8_t> details::http_msg_base::_extract_vector()
+utility::vector<uint8_t> details::http_msg_base::_extract_vector()
 {
     if (!instream())
     {
         throw http_exception(stream_was_set_explicitly);
     }
 
-    std::vector<uint8_t> body;
+    utility::vector<uint8_t> body;
     auto buf_r = instream().streambuf();
     const size_t size = buf_r.in_avail();
     body.resize(size);
@@ -992,7 +992,7 @@ static utility::string_t convert_body_to_string_t(const utility::string_t& conte
     // Latin1
     if (utility::details::str_iequal(charset, charset_types::latin1))
     {
-        std::string body;
+        utility::string body;
         body.resize(streambuf.in_avail());
         if (streambuf.scopy((unsigned char*)&body[0], body.size()) == 0) return string_t();
         return to_string_t(latin1_to_utf16(std::move(body)));
@@ -1001,7 +1001,7 @@ static utility::string_t convert_body_to_string_t(const utility::string_t& conte
     // utf-8.
     else if (utility::details::str_iequal(charset, charset_types::utf8))
     {
-        std::string body;
+        utility::string body;
         body.resize(streambuf.in_avail());
         if (streambuf.scopy((unsigned char*)&body[0], body.size()) == 0) return string_t();
         return to_string_t(std::move(body));
@@ -1135,7 +1135,7 @@ details::_http_request::_http_request(http::method mtd)
     }
 }
 
-details::_http_request::_http_request(std::unique_ptr<http::details::_http_server_context> server_context)
+details::_http_request::_http_request(utility::unique_ptr<http::details::_http_server_context> server_context)
     : m_initiated_response(0)
     , m_server_context(std::move(server_context))
     , m_cancellationToken(pplx::cancellation_token::none())

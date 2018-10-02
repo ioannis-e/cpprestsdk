@@ -52,13 +52,13 @@ namespace experimental
 // Code analysis complains even though there is no bug.
 #pragma warning(push)
 #pragma warning(disable : 6102)
-std::vector<unsigned char> oauth1_config::_hmac_sha1(const utility::string_t& key, const utility::string_t& data)
+utility::vector<unsigned char> oauth1_config::_hmac_sha1(const utility::string_t& key, const utility::string_t& data)
 {
     NTSTATUS status;
     BCRYPT_ALG_HANDLE alg_handle = nullptr;
     BCRYPT_HASH_HANDLE hash_handle = nullptr;
 
-    std::vector<unsigned char> hash;
+    utility::vector<unsigned char> hash;
     DWORD hash_len = 0;
     ULONG result_len = 0;
 
@@ -113,7 +113,7 @@ using namespace Windows::Security::Cryptography;
 using namespace Windows::Security::Cryptography::Core;
 using namespace Windows::Storage::Streams;
 
-std::vector<unsigned char> oauth1_config::_hmac_sha1(const utility::string_t& key, const utility::string_t& data)
+utility::vector<unsigned char> oauth1_config::_hmac_sha1(const utility::string_t& key, const utility::string_t& data)
 {
     Platform::String ^ data_str = ref new Platform::String(data.c_str());
     Platform::String ^ key_str = ref new Platform::String(key.c_str());
@@ -127,14 +127,14 @@ std::vector<unsigned char> oauth1_config::_hmac_sha1(const utility::string_t& ke
 
     Platform::Array<unsigned char, 1> ^ arr;
     CryptographicBuffer::CopyToByteArray(signed_buffer, &arr);
-    return std::vector<unsigned char>(arr->Data, arr->Data + arr->Length);
+    return utility::vector<unsigned char>(arr->Data, arr->Data + arr->Length);
 }
 
 #else // Linux, Mac OS X
 
 #include <openssl/hmac.h>
 
-std::vector<unsigned char> oauth1_config::_hmac_sha1(const utility::string_t& key, const utility::string_t& data)
+utility::vector<unsigned char> oauth1_config::_hmac_sha1(const utility::string_t& key, const utility::string_t& data)
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
     unsigned int digest_len = 0;
@@ -147,7 +147,7 @@ std::vector<unsigned char> oauth1_config::_hmac_sha1(const utility::string_t& ke
          digest,
          &digest_len);
 
-    return std::vector<unsigned char>(digest, digest + digest_len);
+    return utility::vector<unsigned char>(digest, digest + digest_len);
 }
 
 #endif
@@ -177,8 +177,8 @@ utility::string_t oauth1_config::_build_normalized_parameters(web::http::uri u, 
 {
     // While map sorts items by keys it doesn't take value into account.
     // We need to sort the query parameters separately.
-    std::map<utility::string_t, utility::string_t> queries_map = http::uri::split_query(std::move(u).query());
-    std::vector<utility::string_t> queries;
+    utility::map<utility::string_t, utility::string_t> queries_map = http::uri::split_query(std::move(u).query());
+    utility::vector<utility::string_t> queries;
     for (const auto& query : queries_map)
     {
         queries.push_back(query.first + _XPLATSTR('=') + query.second);

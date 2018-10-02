@@ -17,13 +17,6 @@ namespace web
 {
 namespace details
 {
-class zero_memory_deleter
-{
-public:
-    _ASYNCRTIMP void operator()(::utility::string_t* data) const;
-};
-typedef std::unique_ptr<::utility::string_t, zero_memory_deleter> plaintext_string;
-
 #ifdef _WIN32
 #if _WIN32_WINNT >= _WIN32_WINNT_VISTA
 #ifdef __cplusplus_winrt
@@ -31,8 +24,8 @@ class winrt_encryption
 {
 public:
     winrt_encryption() = default;
-    _ASYNCRTIMP winrt_encryption(const std::wstring& data);
-    _ASYNCRTIMP plaintext_string decrypt() const;
+    _ASYNCRTIMP winrt_encryption(const utility::wstring& data);
+    _ASYNCRTIMP secure_unique_wstring decrypt() const;
 
 private:
     ::pplx::task<Windows::Storage::Streams::IBuffer ^> m_buffer;
@@ -42,12 +35,12 @@ class win32_encryption
 {
 public:
     win32_encryption() = default;
-    _ASYNCRTIMP win32_encryption(const std::wstring& data);
+    _ASYNCRTIMP win32_encryption(const utility::secure_wstring& data);
     _ASYNCRTIMP ~win32_encryption();
-    _ASYNCRTIMP plaintext_string decrypt() const;
+    _ASYNCRTIMP utility::secure_unique_wstring decrypt() const;
 
 private:
-    std::vector<char> m_buffer;
+    utility::vector<wchar_t, utility::secure_allocator<wchar_t>> m_buffer;
     size_t m_numCharacters;
 };
 #endif // __cplusplus_winrt
@@ -72,7 +65,7 @@ public:
     /// </summary>
     /// <param name="username">User name as a string.</param>
     /// <param name="password">Password as a string.</param>
-    credentials(utility::string_t username, const utility::string_t& password)
+    credentials(utility::wstring username, const utility::secure_wstring &password)
         : m_username(std::move(username)), m_password(password)
     {
     }
@@ -89,10 +82,10 @@ public:
     /// <returns>A string containing the password.</returns>
     CASABLANCA_DEPRECATED(
         "This API is deprecated for security reasons to avoid unnecessary password copies stored in plaintext.")
-    utility::string_t password() const
+    utility::secure_unique_wstring password() const
     {
 #if defined(_WIN32) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
-        return utility::string_t(*m_password.decrypt());
+        return m_password.decrypt();
 #else
         return m_password;
 #endif
@@ -104,18 +97,25 @@ public:
     /// <returns><c>true</c> if user name and password is set, <c>false</c> otherwise.</returns>
     bool is_set() const { return !m_username.empty(); }
 
-    details::plaintext_string _internal_decrypt() const
+    utility::secure_unique_wstring _internal_decrypt() const
     {
         // Encryption APIs not supported on XP
 #if defined(_WIN32) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
         return m_password.decrypt();
 #else
-        return details::plaintext_string(new ::utility::string_t(m_password));
+        return utility::make_unique<utility::secure_string_t, utility::secure_unique_ptr_deleter<utility::secure_string_t>>(m_password));
 #endif
     }
 
+    utility::secure_unique_string to_base64() {
+        utility::wstring userpass = m_username + _XPLATSTR(":") + _internal_decrypt()->c_str();
+        auto&& u8_userpass = utility::conversions::to_utf8string(userpass);
+        utility::vector<unsigned char, utility::allocator<unsigned char>> credentials_buffer(u8_userpass.begin(), u8_userpass.end());
+        return utility::make_unique<utility::secure_string, utility::secure_unique_ptr_deleter<utility::secure_string>>(utility::conversions::to_utf8string(utility::conversions::to_base64(credentials_buffer)).c_str());
+    }
+
 private:
-    ::utility::string_t m_username;
+    utility::wstring m_username;
 
 #if defined(_WIN32) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
 #if defined(__cplusplus_winrt)
@@ -124,7 +124,7 @@ private:
     details::win32_encryption m_password;
 #endif
 #else
-    ::utility::string_t m_password;
+    utility::secure_wstring m_password;
 #endif
 };
 

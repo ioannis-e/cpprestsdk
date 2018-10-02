@@ -227,8 +227,8 @@ JNIEnv* get_jvm_env()
 void cpprest_init(JavaVM* vm) { crossplat::JVM = vm; }
 #endif // defined(__ANDROID__)
 
-std::unique_ptr<crossplat::threadpool> crossplat::threadpool::construct(size_t num_threads)
+utility::unique_ptr<crossplat::threadpool> crossplat::threadpool::construct(size_t num_threads)
 {
-    return std::unique_ptr<crossplat::threadpool>(new threadpool_impl(num_threads));
+    return utility::make_unique<threadpool_impl>(num_threads);
 }
 #endif //  !defined(CPPREST_EXCLUDE_WEBSOCKETS) || !defined(_WIN32)

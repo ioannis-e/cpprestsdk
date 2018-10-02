@@ -85,7 +85,7 @@ class compress_factory
 {
 public:
     virtual const utility::string_t& algorithm() const = 0;
-    virtual std::unique_ptr<compress_provider> make_compressor() const = 0;
+    virtual utility::unique_ptr<compress_provider> make_compressor() const = 0;
     virtual ~compress_factory() = default;
 };
 
@@ -97,7 +97,7 @@ class decompress_factory
 public:
     virtual const utility::string_t& algorithm() const = 0;
     virtual uint16_t weight() const = 0;
-    virtual std::unique_ptr<decompress_provider> make_decompressor() const = 0;
+    virtual utility::unique_ptr<decompress_provider> make_decompressor() const = 0;
     virtual ~decompress_factory() = default;
 };
 
@@ -145,7 +145,7 @@ _ASYNCRTIMP bool supported(const utility::string_t& algorithm);
 /// <returns>
 /// A caller-owned pointer to a provider of the requested-type, or to nullptr if no such built-in type exists.
 /// </returns>
-_ASYNCRTIMP std::unique_ptr<compress_provider> make_compressor(const utility::string_t& algorithm);
+_ASYNCRTIMP utility::unique_ptr<compress_provider> make_compressor(const utility::string_t& algorithm);
 
 /// <summary>
 /// Factory function to instantiate a built-in decompression provider with default parameters by compression algorithm
@@ -155,7 +155,7 @@ _ASYNCRTIMP std::unique_ptr<compress_provider> make_compressor(const utility::st
 /// <returns>
 /// A caller-owned pointer to a provider of the requested-type, or to nullptr if no such built-in type exists.
 /// </returns>
-_ASYNCRTIMP std::unique_ptr<decompress_provider> make_decompressor(const utility::string_t& algorithm);
+_ASYNCRTIMP utility::unique_ptr<decompress_provider> make_decompressor(const utility::string_t& algorithm);
 
 /// <summary>
 /// Factory function to obtain a pointer to a built-in compression provider factory by compression algorithm name.
@@ -182,7 +182,7 @@ _ASYNCRTIMP std::shared_ptr<decompress_factory> get_decompress_factory(const uti
 /// A caller-owned pointer to a gzip compression provider, or to nullptr if the library was built without built-in
 /// compression support.
 /// </returns>
-_ASYNCRTIMP std::unique_ptr<compress_provider> make_gzip_compressor(int compressionLevel,
+_ASYNCRTIMP utility::unique_ptr<compress_provider> make_gzip_compressor(int compressionLevel,
                                                                     int method,
                                                                     int strategy,
                                                                     int memLevel);
@@ -194,7 +194,7 @@ _ASYNCRTIMP std::unique_ptr<compress_provider> make_gzip_compressor(int compress
 /// A caller-owned pointer to a deflate compression provider, or to nullptr if the library was built without built-in
 /// compression support..
 /// </returns>
-_ASYNCRTIMP std::unique_ptr<compress_provider> make_deflate_compressor(int compressionLevel,
+_ASYNCRTIMP utility::unique_ptr<compress_provider> make_deflate_compressor(int compressionLevel,
                                                                        int method,
                                                                        int strategy,
                                                                        int memLevel);
@@ -206,7 +206,7 @@ _ASYNCRTIMP std::unique_ptr<compress_provider> make_deflate_compressor(int compr
 /// A caller-owned pointer to a Brotli compression provider, or to nullptr if the library was built without built-in
 /// compression support.
 /// </returns>
-_ASYNCRTIMP std::unique_ptr<compress_provider> make_brotli_compressor(
+_ASYNCRTIMP utility::unique_ptr<compress_provider> make_brotli_compressor(
     uint32_t window, uint32_t quality, uint32_t mode, uint32_t block, uint32_t nomodel, uint32_t hint);
 } // namespace builtin
 
@@ -227,7 +227,7 @@ _ASYNCRTIMP std::unique_ptr<compress_provider> make_brotli_compressor(
 /// be helpful when a caller wishes to build vectors containing a mix of custom and built-in providers.
 /// </remarks>
 _ASYNCRTIMP std::shared_ptr<compress_factory> make_compress_factory(
-    const utility::string_t& algorithm, std::function<std::unique_ptr<compress_provider>()> make_compressor);
+    const utility::string_t& algorithm, std::function<utility::unique_ptr<compress_provider>()> make_compressor);
 
 /// <summary>
 /// Factory function to instantiate a decompression provider factory by compression algorithm name.
@@ -254,7 +254,7 @@ _ASYNCRTIMP std::shared_ptr<compress_factory> make_compress_factory(
 _ASYNCRTIMP std::shared_ptr<decompress_factory> make_decompress_factory(
     const utility::string_t& algorithm,
     uint16_t weight,
-    std::function<std::unique_ptr<decompress_provider>()> make_decompressor);
+    std::function<utility::unique_ptr<decompress_provider>()> make_decompressor);
 
 namespace details
 {
@@ -283,10 +283,10 @@ enum header_types
 /// A pointer to a compressor object that is acceptable per the supplied header, or to nullptr if no matching
 /// algorithm is found.
 /// </returns>
-_ASYNCRTIMP std::unique_ptr<compress_provider> get_compressor_from_header(
+_ASYNCRTIMP utility::unique_ptr<compress_provider> get_compressor_from_header(
     const utility::string_t& encoding,
     header_types type,
-    const std::vector<std::shared_ptr<compress_factory>>& factories = std::vector<std::shared_ptr<compress_factory>>());
+    const utility::vector<std::shared_ptr<compress_factory>>& factories = utility::vector<std::shared_ptr<compress_factory>>());
 
 /// <summary>
 /// Factory function to instantiate an appropriate decompression provider, if any.
@@ -300,11 +300,11 @@ _ASYNCRTIMP std::unique_ptr<compress_provider> get_compressor_from_header(
 /// A pointer to a decompressor object that is acceptable per the supplied header, or to nullptr if no matching
 /// algorithm is found.
 /// </returns>
-_ASYNCRTIMP std::unique_ptr<decompress_provider> get_decompressor_from_header(
+_ASYNCRTIMP utility::unique_ptr<decompress_provider> get_decompressor_from_header(
     const utility::string_t& encoding,
     header_types type,
-    const std::vector<std::shared_ptr<decompress_factory>>& factories =
-        std::vector<std::shared_ptr<decompress_factory>>());
+    const utility::vector<std::shared_ptr<decompress_factory>>& factories =
+        utility::vector<std::shared_ptr<decompress_factory>>());
 
 /// <summary>
 /// Helper function to compose a TE or Accept-Encoding header with supported, and possibly ranked, compression
@@ -318,8 +318,8 @@ _ASYNCRTIMP std::unique_ptr<decompress_provider> get_decompressor_from_header(
 /// A well-formed header, without the header name, specifying the acceptable ranked compression types.
 /// </returns>
 _ASYNCRTIMP utility::string_t build_supported_header(header_types type,
-                                                     const std::vector<std::shared_ptr<decompress_factory>>& factories =
-                                                         std::vector<std::shared_ptr<decompress_factory>>());
+                                                     const utility::vector<std::shared_ptr<decompress_factory>>& factories =
+                                                         utility::vector<std::shared_ptr<decompress_factory>>());
 } // namespace details
 } // namespace compression
 } // namespace http

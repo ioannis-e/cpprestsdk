@@ -64,35 +64,35 @@ namespace conversions
 /// </summary>
 /// <param name="w">A two byte character UTF-16 string.</param>
 /// <returns>A single byte character UTF-8 string.</returns>
-_ASYNCRTIMP std::string __cdecl utf16_to_utf8(const utf16string& w);
+_ASYNCRTIMP utility::string __cdecl utf16_to_utf8(const utf16string& w);
 
 /// <summary>
 /// Converts a UTF-8 string to a UTF-16
 /// </summary>
 /// <param name="s">A single byte character UTF-8 string.</param>
 /// <returns>A two byte character UTF-16 string.</returns>
-_ASYNCRTIMP utf16string __cdecl utf8_to_utf16(const std::string& s);
+_ASYNCRTIMP utf16string __cdecl utf8_to_utf16(const utility::string& s);
 
 /// <summary>
 /// Converts a ASCII (us-ascii) string to a UTF-16 string.
 /// </summary>
 /// <param name="s">A single byte character us-ascii string.</param>
 /// <returns>A two byte character UTF-16 string.</returns>
-_ASYNCRTIMP utf16string __cdecl usascii_to_utf16(const std::string& s);
+_ASYNCRTIMP utf16string __cdecl usascii_to_utf16(const utility::string& s);
 
 /// <summary>
 /// Converts a Latin1 (iso-8859-1) string to a UTF-16 string.
 /// </summary>
 /// <param name="s">A single byte character UTF-8 string.</param>
 /// <returns>A two byte character UTF-16 string.</returns>
-_ASYNCRTIMP utf16string __cdecl latin1_to_utf16(const std::string& s);
+_ASYNCRTIMP utf16string __cdecl latin1_to_utf16(const utility::string& s);
 
 /// <summary>
 /// Converts a Latin1 (iso-8859-1) string to a UTF-8 string.
 /// </summary>
 /// <param name="s">A single byte character UTF-8 string.</param>
 /// <returns>A single byte character UTF-8 string.</returns>
-_ASYNCRTIMP utf8string __cdecl latin1_to_utf8(const std::string& s);
+_ASYNCRTIMP utf8string __cdecl latin1_to_utf8(const utility::string& s);
 
 /// <summary>
 /// Converts to a platform dependent Unicode string type.
@@ -100,9 +100,9 @@ _ASYNCRTIMP utf8string __cdecl latin1_to_utf8(const std::string& s);
 /// <param name="s">A single byte character UTF-8 string.</param>
 /// <returns>A platform dependent string type.</returns>
 #ifdef _UTF16_STRINGS
-_ASYNCRTIMP utility::string_t __cdecl to_string_t(std::string&& s);
+_ASYNCRTIMP utility::string_t __cdecl to_string_t(utility::string&& s);
 #else
-inline utility::string_t&& to_string_t(std::string&& s) { return std::move(s); }
+inline utility::string_t&& to_string_t(utility::string&& s) { return std::move(s); }
 #endif
 
 /// <summary>
@@ -121,9 +121,9 @@ _ASYNCRTIMP utility::string_t __cdecl to_string_t(utf16string&& s);
 /// <param name="s">A single byte character UTF-8 string.</param>
 /// <returns>A platform dependent string type.</returns>
 #ifdef _UTF16_STRINGS
-_ASYNCRTIMP utility::string_t __cdecl to_string_t(const std::string& s);
+_ASYNCRTIMP utility::string_t __cdecl to_string_t(const utility::string& s);
 #else
-inline const utility::string_t& to_string_t(const std::string& s) { return s; }
+inline const utility::string_t& to_string_t(const utility::string& s) { return s; }
 #endif
 
 /// <summary>
@@ -142,7 +142,7 @@ _ASYNCRTIMP utility::string_t __cdecl to_string_t(const utf16string& s);
 /// </summary>
 /// <param name="value">A single byte character UTF-8 string.</param>
 /// <returns>A two byte character UTF-16 string.</returns>
-_ASYNCRTIMP utf16string __cdecl to_utf16string(const std::string& value);
+_ASYNCRTIMP utf16string __cdecl to_utf16string(const utility::string& value);
 
 /// <summary>
 /// Converts to a UTF-16 from string.
@@ -162,26 +162,26 @@ inline utf16string&& to_utf16string(utf16string&& value) { return std::move(valu
 /// </summary>
 /// <param name="value">A single byte character UTF-8 string.</param>
 /// <returns>A single byte character UTF-8 string.</returns>
-inline std::string&& to_utf8string(std::string&& value) { return std::move(value); }
+inline utility::string&& to_utf8string(utility::string&& value) { return std::move(value); }
 
 /// <summary>
 /// Converts to a UTF-8 string.
 /// </summary>
 /// <param name="value">A single byte character UTF-8 string.</param>
 /// <returns>A single byte character UTF-8 string.</returns>
-inline const std::string& to_utf8string(const std::string& value) { return value; }
+inline const utility::string& to_utf8string(const utility::string& value) { return value; }
 
 /// <summary>
 /// Converts to a UTF-8 string.
 /// </summary>
 /// <param name="value">A two byte character UTF-16 string.</param>
 /// <returns>A single byte character UTF-8 string.</returns>
-_ASYNCRTIMP std::string __cdecl to_utf8string(const utf16string& value);
+_ASYNCRTIMP utility::string __cdecl to_utf8string(const utf16string& value);
 
 /// <summary>
 /// Encode the given byte array into a base64 string
 /// </summary>
-_ASYNCRTIMP utility::string_t __cdecl to_base64(const std::vector<unsigned char>& data);
+_ASYNCRTIMP utility::string_t __cdecl to_base64(const utility::vector<unsigned char>& data);
 
 /// <summary>
 /// Encode the given 8-byte integer into a base64 string
@@ -191,7 +191,7 @@ _ASYNCRTIMP utility::string_t __cdecl to_base64(uint64_t data);
 /// <summary>
 /// Decode the given base64 string to a byte array
 /// </summary>
-_ASYNCRTIMP std::vector<unsigned char> __cdecl from_base64(const utility::string_t& str);
+_ASYNCRTIMP utility::vector<unsigned char> __cdecl from_base64(const utility::string_t& str);
 
 template<typename Source>
 CASABLANCA_DEPRECATED("All locale-sensitive APIs will be removed in a future update. Use stringstreams directly if "
@@ -214,28 +214,26 @@ inline utility::string_t print_string(const utility::string_t& val) { return val
 
 namespace details
 {
-#if defined(__ANDROID__)
 template<class T>
-inline std::string to_string(const T t)
+inline utility::string to_string(const T t)
 {
-    std::ostringstream os;
+    utility::ostringstream os;
     os.imbue(std::locale::classic());
     os << t;
     return os.str();
 }
-#endif
 
 template<class T>
 inline utility::string_t to_string_t(const T t)
 {
 #ifdef _UTF16_STRINGS
     using std::to_wstring;
-    return to_wstring(t);
+    return to_wstring(t).c_str();
 #else
 #if !defined(__ANDROID__)
     using std::to_string;
 #endif
-    return to_string(t);
+    return to_string(t).c_str();
 #endif
 }
 
@@ -321,7 +319,7 @@ public:
 #endif
 private:
 #ifdef _WIN32
-    std::string m_prevLocale;
+    utility::string m_prevLocale;
     int m_prevThreadSetting;
 #elif !(defined(ANDROID) || defined(__ANDROID__))
     locale_t m_prevLocale;
@@ -416,7 +414,7 @@ _ASYNCRTIMP bool __cdecl str_iequal(const std::string& left, const std::string& 
 /// <param name="left">First string to compare.</param>
 /// <param name="right">Second strong to compare.</param>
 /// <returns>true if the strings are equivalent, false otherwise</returns>
-_ASYNCRTIMP bool __cdecl str_iequal(const std::wstring& left, const std::wstring& right) CPPREST_NOEXCEPT;
+_ASYNCRTIMP bool __cdecl str_iequal(const utility::wstring& left, const utility::wstring& right) CPPREST_NOEXCEPT;
 
 /// <summary>
 /// Cross platform utility function for performing case insensitive string less-than comparison.
@@ -425,7 +423,7 @@ _ASYNCRTIMP bool __cdecl str_iequal(const std::wstring& left, const std::wstring
 /// <param name="right">Second strong to compare.</param>
 /// <returns>true if a lowercase view of left is lexicographically less than a lowercase view of right; otherwise,
 /// false.</returns>
-_ASYNCRTIMP bool __cdecl str_iless(const std::string& left, const std::string& right) CPPREST_NOEXCEPT;
+_ASYNCRTIMP bool __cdecl str_iless(const utility::string& left, const utility::string& right) CPPREST_NOEXCEPT;
 
 /// <summary>
 /// Cross platform utility function for performing case insensitive string less-than comparison.
@@ -434,19 +432,19 @@ _ASYNCRTIMP bool __cdecl str_iless(const std::string& left, const std::string& r
 /// <param name="right">Second strong to compare.</param>
 /// <returns>true if a lowercase view of left is lexicographically less than a lowercase view of right; otherwise,
 /// false.</returns>
-_ASYNCRTIMP bool __cdecl str_iless(const std::wstring& left, const std::wstring& right) CPPREST_NOEXCEPT;
+_ASYNCRTIMP bool __cdecl str_iless(const utility::wstring& left, const utility::wstring& right) CPPREST_NOEXCEPT;
 
 /// <summary>
 /// Convert a string to lowercase in place.
 /// </summary>
 /// <param name="target">The string to convert to lowercase.</param>
-_ASYNCRTIMP void __cdecl inplace_tolower(std::string& target) CPPREST_NOEXCEPT;
+_ASYNCRTIMP void __cdecl inplace_tolower(utility::string& target) CPPREST_NOEXCEPT;
 
 /// <summary>
 /// Convert a string to lowercase in place.
 /// </summary>
 /// <param name="target">The string to convert to lowercase.</param>
-_ASYNCRTIMP void __cdecl inplace_tolower(std::wstring& target) CPPREST_NOEXCEPT;
+_ASYNCRTIMP void __cdecl inplace_tolower(utility::wstring& target) CPPREST_NOEXCEPT;
 
 #ifdef _WIN32
 
@@ -506,7 +504,7 @@ inline std::error_code __cdecl create_error_code(unsigned long errorCode)
 /// </summary>
 inline utility::string_t __cdecl create_error_message(unsigned long errorCode)
 {
-    return utility::conversions::to_string_t(create_error_code(errorCode).message());
+    return utility::conversions::to_string_t(create_error_code(errorCode).message().c_str());
 }
 
 } // namespace details

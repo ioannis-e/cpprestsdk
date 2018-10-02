@@ -130,10 +130,10 @@ struct windows_request_context : http::details::_http_server_context
     size_t m_remaining_to_write;
 
     HTTP_REQUEST* m_request;
-    std::unique_ptr<unsigned char[]> m_request_buffer;
+    utility::unique_ptr<unsigned char[]> m_request_buffer;
 
-    std::unique_ptr<HTTP_UNKNOWN_HEADER[]> m_headers;
-    std::vector<std::string> m_headers_buffer;
+    utility::unique_ptr<HTTP_UNKNOWN_HEADER[]> m_headers;
+    utility::vector<utility::string> m_headers_buffer;
 
     http_overlapped m_overlapped;
 
@@ -142,9 +142,9 @@ struct windows_request_context : http::details::_http_server_context
 
     std::exception_ptr m_except_ptr;
 
-    std::vector<uint8_t> m_compress_buffer;
-    std::unique_ptr<web::http::compression::compress_provider> m_compressor;
-    std::unique_ptr<web::http::compression::decompress_provider> m_decompressor;
+    utility::vector<uint8_t> m_compress_buffer;
+    utility::unique_ptr<web::http::compression::compress_provider> m_compressor;
+    utility::unique_ptr<web::http::compression::decompress_provider> m_decompressor;
     utility::string_t m_decompress_header;
     http::compression::details::header_types m_decompress_header_type;
 
@@ -158,7 +158,7 @@ private:
     // Cancels this request.
     void cancel_request(std::exception_ptr except_ptr);
 
-    std::vector<unsigned char> m_body_data;
+    utility::vector<unsigned char> m_body_data;
 };
 
 /// <summary>
@@ -225,8 +225,8 @@ private:
 
     // Registered listeners
     pplx::extensibility::reader_writer_lock_t _M_listenersLock;
-    std::unordered_map<web::http::experimental::listener::details::http_listener_impl*,
-                       std::unique_ptr<listener_registration>>
+    utility::unordered_map<web::http::experimental::listener::details::http_listener_impl*,
+                           utility::unique_ptr<listener_registration>>
         _M_registeredListeners;
 
     // HTTP Server API server session id.

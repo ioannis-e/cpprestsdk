@@ -131,14 +131,6 @@ enum class httpclient_errorcode_context
     close
 };
 
-static std::string generate_base64_userpass(const ::web::credentials& creds)
-{
-    auto userpass = creds.username() + U(":") + *creds._internal_decrypt();
-    auto&& u8_userpass = utility::conversions::to_utf8string(userpass);
-    std::vector<unsigned char> credentials_buffer(u8_userpass.begin(), u8_userpass.end());
-    return utility::conversions::to_utf8string(utility::conversions::to_base64(credentials_buffer));
-}
-
 class asio_connection_pool;
 
 class asio_connection
@@ -172,7 +164,7 @@ public:
         {
             ssl_context_callback(ssl_context);
         }
-        m_ssl_stream = utility::details::make_unique<boost::asio::ssl::stream<boost::asio::ip::tcp::socket&>>(
+        m_ssl_stream = utility::make_unique<boost::asio::ssl::stream<boost::asio::ip::tcp::socket&>>(
             m_socket, ssl_context);
         m_cn_hostname = std::move(cn_hostname);
     }
@@ -342,7 +334,7 @@ private:
     // as normal message processing.
     std::mutex m_socket_lock;
     tcp::socket m_socket;
-    std::unique_ptr<boost::asio::ssl::stream<tcp::socket&>> m_ssl_stream;
+    utility::unique_ptr<boost::asio::ssl::stream<tcp::socket&>> m_ssl_stream;
     std::string m_cn_hostname;
 
     bool m_is_reused;
@@ -474,7 +466,7 @@ class asio_client final : public _http_client_communicator
 public:
     asio_client(http::uri&& address, http_client_config&& client_config)
         : _http_client_communicator(std::move(address), std::move(client_config))
-        , m_pool(std::make_shared<asio_connection_pool>())
+        , m_pool(utility::make_shared<asio_connection_pool>())
     {
     }
 
@@ -489,7 +481,7 @@ public:
         if (conn == nullptr)
         {
             // Pool was empty. Create a new connection
-            conn = std::make_shared<asio_connection>(crossplat::threadpool::shared_instance().service());
+            conn = utility::make_shared<asio_connection>(crossplat::threadpool::shared_instance().service());
             if (base_uri().scheme() == U("https") && !this->client_config().proxy().is_specified())
             {
                 conn->upgrade_to_ssl(std::move(cn_host), this->client_config().get_ssl_context_callback());
@@ -537,7 +529,7 @@ public:
     {
         auto client_cast(std::static_pointer_cast<asio_client>(client));
         auto connection(client_cast->obtain_connection(request));
-        auto ctx = std::make_shared<asio_context>(client, request, connection);
+        auto ctx = utility::make_shared<asio_context>(client, request, connection);
         ctx->m_timer.set_ctx(std::weak_ptr<asio_context>(ctx));
         return ctx;
     }
@@ -632,7 +624,7 @@ public:
                 auto client = std::static_pointer_cast<asio_client>(m_context->m_http_client);
                 try
                 {
-                    m_context->m_connection = client->obtain_connection(m_context->m_request);
+                m_context->m_connection = client->obtain_connection(m_context->m_request);
                 }
                 catch (...)
                 {
@@ -697,7 +689,7 @@ public:
 
                 try
                 {
-                    m_context->upgrade_to_ssl();
+                m_context->upgrade_to_ssl();
                 }
                 catch (...)
                 {
@@ -915,7 +907,7 @@ public:
             // The ssl_tunnel_proxy keeps the context alive and then calls back once the ssl tunnel is established via
             // 'start_http_request_flow'
             std::shared_ptr<ssl_proxy_tunnel> ssl_tunnel =
-                std::make_shared<ssl_proxy_tunnel>(shared_from_this(), start_http_request_flow);
+                utility::make_shared<ssl_proxy_tunnel>(shared_from_this(), start_http_request_flow);
             ssl_tunnel->start_proxy_connect();
         }
         else
@@ -949,7 +941,7 @@ private:
     {
         std::string header;
         header.append("Authorization: Basic ");
-        header.append(generate_base64_userpass(m_http_client->client_config().credentials()));
+        header.append(m_http_client->client_config().credentials().to_base64());
         header.append(CRLF);
         return header;
     }
@@ -958,7 +950,7 @@ private:
     {
         std::string header;
         header.append("Proxy-Authorization: Basic ");
-        header.append(generate_base64_userpass(m_http_client->client_config().proxy().credentials()));
+        header.append(m_http_client->client_config().proxy().credentials().to_base64());
         header.append(CRLF);
         return header;
     }
@@ -1028,7 +1020,7 @@ private:
             auto client = std::static_pointer_cast<asio_client>(m_http_client);
             try
             {
-                m_connection = client->obtain_connection(m_request);
+            m_connection = client->obtain_connection(m_request);
             }
             catch (...)
             {
@@ -1560,7 +1552,7 @@ private:
         }
     }
 
-    bool decompress(const uint8_t* input, size_t input_size, std::vector<uint8_t>& output)
+    bool decompress(const uint8_t* input, size_t input_size, utility::vector<uint8_t>& output)
     {
         // Need to guard against attempting to decompress when we're already finished or encountered an error!
         if (input == nullptr || input_size == 0)
@@ -1635,7 +1627,7 @@ private:
                 const auto this_request = shared_from_this();
                 if (m_decompressor)
                 {
-                    std::vector<uint8_t> decompressed;
+                    utility::vector<uint8_t> decompressed;
 
                     bool boo =
                         decompress(boost::asio::buffer_cast<const uint8_t*>(m_body_buf.data()), to_read, decompressed);
@@ -1660,7 +1652,7 @@ private:
                     {
                         // Move the decompressed buffer into a shared_ptr to keep it alive until putn_nocopy completes.
                         // When VS 2013 support is dropped, this should be changed to a unique_ptr plus a move capture.
-                        auto shared_decompressed = std::make_shared<std::vector<uint8_t>>(std::move(decompressed));
+                        auto shared_decompressed = utility::make_shared<utility::vector<uint8_t>>(std::move(decompressed));
 
                         writeBuffer.putn_nocopy(shared_decompressed->data(), shared_decompressed->size())
                             .then([this_request, to_read, shared_decompressed AND_CAPTURE_MEMBER_FUNCTION_POINTERS](
@@ -1755,7 +1747,7 @@ private:
 
             if (m_decompressor)
             {
-                std::vector<uint8_t> decompressed;
+                utility::vector<uint8_t> decompressed;
 
                 bool boo =
                     decompress(boost::asio::buffer_cast<const uint8_t*>(m_body_buf.data()), read_size, decompressed);
@@ -1790,7 +1782,7 @@ private:
                 {
                     // Move the decompressed buffer into a shared_ptr to keep it alive until putn_nocopy completes.
                     // When VS 2013 support is dropped, this should be changed to a unique_ptr plus a move capture.
-                    auto shared_decompressed = std::make_shared<std::vector<uint8_t>>(std::move(decompressed));
+                    auto shared_decompressed = utility::make_shared<utility::vector<uint8_t>>(std::move(decompressed));
 
                     writeBuffer.putn_nocopy(shared_decompressed->data(), shared_decompressed->size())
                         .then([this_request, read_size, shared_decompressed AND_CAPTURE_MEMBER_FUNCTION_POINTERS](
@@ -1949,7 +1941,7 @@ private:
 std::shared_ptr<_http_client_communicator> create_platform_final_pipeline_stage(uri&& base_uri,
                                                                                 http_client_config&& client_config)
 {
-    return std::make_shared<asio_client>(std::move(base_uri), std::move(client_config));
+    return utility::make_shared<asio_client>(std::move(base_uri), std::move(client_config));
 }
 
 void asio_client::send_request(const std::shared_ptr<request_context>& request_ctx)

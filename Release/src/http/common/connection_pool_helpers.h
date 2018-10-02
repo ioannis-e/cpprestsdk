@@ -52,7 +52,7 @@ public:
     }
 
 private:
-    std::vector<std::shared_ptr<ConnectionIsh>> m_connections;
+    utility::vector<std::shared_ptr<ConnectionIsh>> m_connections;
     size_t m_staleBefore = 0;
 };
 

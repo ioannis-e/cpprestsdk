@@ -58,7 +58,7 @@ struct _file_info_impl : _file_info
     /// <summary>
     /// A list of callback waiting to be signaled that there are no outstanding writes.
     /// </summary>
-    std::vector<_filestream_callback*> m_sync_waiters;
+    utility::vector<_filestream_callback*> m_sync_waiters;
 
     std::atomic<long> m_outstanding_writes;
 };
@@ -154,7 +154,7 @@ bool _open_fsb_str(_filestream_callback* callback, const char* filename, std::io
 {
     if (callback == nullptr || filename == nullptr) return false;
 
-    std::string name(filename);
+    utility::string name(filename);
 
     pplx::create_task([=]() -> void {
         int cmode = get_open_flags(mode);

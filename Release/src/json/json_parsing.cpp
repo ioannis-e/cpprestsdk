@@ -48,10 +48,10 @@ __declspec(noreturn)
 #endif
     void CreateException(const Token& tk, const utility::string_t& message)
 {
-    std::string str("* Line ");
-    str += std::to_string(tk.start.m_line);
+    utility::string str("* Line ");
+    str += utility::conversions::details::to_string(tk.start.m_line);
     str += ", Column ";
-    str += std::to_string(tk.start.m_column);
+    str += utility::conversions::details::to_string(tk.start.m_column);
     str += " Syntax error: ";
     str += utility::conversions::to_utf8string(message);
     throw web::json::json_exception(std::move(str));
@@ -98,7 +98,7 @@ public:
         Token() : kind(TKN_EOF) {}
 
         Kind kind;
-        std::basic_string<CharType> string_val;
+        utility::basic_string<CharType> string_val;
 
         typename JSON_Parser<CharType>::Location start;
 
@@ -148,9 +148,9 @@ private:
     bool CompleteKeywordTrue(Token& token);
     bool CompleteKeywordFalse(Token& token);
     bool CompleteKeywordNull(Token& token);
-    std::unique_ptr<web::json::details::_Value> _ParseValue(typename JSON_Parser<CharType>::Token& first);
-    std::unique_ptr<web::json::details::_Value> _ParseObject(typename JSON_Parser<CharType>::Token& tkn);
-    std::unique_ptr<web::json::details::_Value> _ParseArray(typename JSON_Parser<CharType>::Token& tkn);
+    utility::unique_ptr<web::json::details::_Value> _ParseValue(typename JSON_Parser<CharType>::Token& first);
+    utility::unique_ptr<web::json::details::_Value> _ParseObject(typename JSON_Parser<CharType>::Token& tkn);
+    utility::unique_ptr<web::json::details::_Value> _ParseArray(typename JSON_Parser<CharType>::Token& tkn);
 
     JSON_Parser& operator=(const JSON_Parser&);
 
@@ -211,7 +211,7 @@ template<typename CharType>
 class JSON_StringParser : public JSON_Parser<CharType>
 {
 public:
-    JSON_StringParser(const std::basic_string<CharType>& string) : m_position(&string[0])
+    JSON_StringParser(const utility::basic_string<CharType>& string) : m_position(&string[0])
     {
         m_startpos = m_position;
         m_endpos = m_position + string.size();
@@ -445,7 +445,7 @@ bool JSON_Parser<CharType>::CompleteNumberLiteral(CharType first, Token& token)
     }
 
     // Magic number 5 leaves room for decimal point, null terminator, etc (in most cases)
-    ::std::vector<CharType> buf(::std::numeric_limits<uint64_t>::digits10 + 5);
+    utility::vector<CharType> buf(std::numeric_limits<uint64_t>::digits10 + 5);
     int count = print_llu(buf.data(), buf.size(), val64);
     _ASSERTE(count >= 0);
     _ASSERTE((size_t)count < buf.size());
@@ -659,7 +659,7 @@ void convert_append_unicode_code_unit(JSON_Parser<utf16char>::Token& token, utf1
 }
 void convert_append_unicode_code_unit(JSON_Parser<char>::Token& token, utf16string value)
 {
-    token.string_val.append(::utility::conversions::utf16_to_utf8(value));
+    token.string_val.append(utility::conversions::utf16_to_utf8(value));
 }
 void convert_append_unicode_code_unit(JSON_Parser<utf16char>::Token& token, utf16char value)
 {
@@ -668,7 +668,7 @@ void convert_append_unicode_code_unit(JSON_Parser<utf16char>::Token& token, utf1
 void convert_append_unicode_code_unit(JSON_Parser<char>::Token& token, utf16char value)
 {
     utf16string utf16(reinterpret_cast<utf16char*>(&value), 1);
-    token.string_val.append(::utility::conversions::utf16_to_utf8(utf16));
+    token.string_val.append(utility::conversions::utf16_to_utf8(utf16));
 }
 
 template<typename CharType>
@@ -940,10 +940,10 @@ try_again:
 }
 
 template<typename CharType>
-std::unique_ptr<web::json::details::_Value> JSON_Parser<CharType>::_ParseObject(
+utility::unique_ptr<web::json::details::_Value> JSON_Parser<CharType>::_ParseObject(
     typename JSON_Parser<CharType>::Token& tkn)
 {
-    auto obj = utility::details::make_unique<web::json::details::_Object>(g_keep_json_object_unsorted);
+    auto obj = utility::make_unique<web::json::details::_Object>(g_keep_json_object_unsorted);
     auto& elems = obj->m_object.m_elements;
 
     GetNextToken(tkn);
@@ -954,7 +954,7 @@ std::unique_ptr<web::json::details::_Value> JSON_Parser<CharType>::_ParseObject(
         while (true)
         {
             // State 1: New field or end of object, looking for field name or closing brace
-            std::basic_string<CharType> fieldName;
+            utility::basic_string<CharType> fieldName;
             switch (tkn.kind)
             {
                 case JSON_Parser<CharType>::Token::TKN_StringLiteral: fieldName = std::move(tkn.string_val); break;
@@ -996,31 +996,31 @@ std::unique_ptr<web::json::details::_Value> JSON_Parser<CharType>::_ParseObject(
 
 done:
     GetNextToken(tkn);
-    if (tkn.m_error) return utility::details::make_unique<web::json::details::_Null>();
+    if (tkn.m_error) return utility::make_unique<web::json::details::_Null>();
 
     if (!g_keep_json_object_unsorted)
     {
         ::std::sort(elems.begin(), elems.end(), json::object::compare_pairs);
     }
 
-    return std::unique_ptr<web::json::details::_Value>(obj.release());
+    return utility::unique_ptr<web::json::details::_Value>(obj.release());
 
 error:
     if (!tkn.m_error)
     {
         SetErrorCode(tkn, json_error::malformed_object_literal);
     }
-    return utility::details::make_unique<web::json::details::_Null>();
+    return utility::make_unique<web::json::details::_Null>();
 }
 
 template<typename CharType>
-std::unique_ptr<web::json::details::_Value> JSON_Parser<CharType>::_ParseArray(
+utility::unique_ptr<web::json::details::_Value> JSON_Parser<CharType>::_ParseArray(
     typename JSON_Parser<CharType>::Token& tkn)
 {
     GetNextToken(tkn);
-    if (tkn.m_error) return utility::details::make_unique<web::json::details::_Null>();
+    if (tkn.m_error) return utility::make_unique<web::json::details::_Null>();
 
-    auto result = utility::details::make_unique<web::json::details::_Array>();
+    auto result = utility::make_unique<web::json::details::_Array>();
 
     if (tkn.kind != JSON_Parser<CharType>::Token::TKN_CloseBracket)
     {
@@ -1028,34 +1028,34 @@ std::unique_ptr<web::json::details::_Value> JSON_Parser<CharType>::_ParseArray(
         {
             // State 1: Looking for an expression.
             result->m_array.m_elements.emplace_back(ParseValue(tkn));
-            if (tkn.m_error) return utility::details::make_unique<web::json::details::_Null>();
+            if (tkn.m_error) return utility::make_unique<web::json::details::_Null>();
 
             // State 4: Looking for a comma or a closing bracket
             switch (tkn.kind)
             {
                 case JSON_Parser<CharType>::Token::TKN_Comma:
                     GetNextToken(tkn);
-                    if (tkn.m_error) return utility::details::make_unique<web::json::details::_Null>();
+                    if (tkn.m_error) return utility::make_unique<web::json::details::_Null>();
                     break;
                 case JSON_Parser<CharType>::Token::TKN_CloseBracket:
                     GetNextToken(tkn);
-                    if (tkn.m_error) return utility::details::make_unique<web::json::details::_Null>();
+                    if (tkn.m_error) return utility::make_unique<web::json::details::_Null>();
                     return std::move(result);
                 default:
                     SetErrorCode(tkn, json_error::malformed_array_literal);
-                    return utility::details::make_unique<web::json::details::_Null>();
+                    return utility::make_unique<web::json::details::_Null>();
             }
         }
     }
 
     GetNextToken(tkn);
-    if (tkn.m_error) return utility::details::make_unique<web::json::details::_Null>();
+    if (tkn.m_error) return utility::make_unique<web::json::details::_Null>();
 
-    return std::unique_ptr<web::json::details::_Value>(result.release());
+    return utility::unique_ptr<web::json::details::_Value>(result.release());
 }
 
 template<typename CharType>
-std::unique_ptr<web::json::details::_Value> JSON_Parser<CharType>::_ParseValue(
+utility::unique_ptr<web::json::details::_Value> JSON_Parser<CharType>::_ParseValue(
     typename JSON_Parser<CharType>::Token& tkn)
 {
     switch (tkn.kind)
@@ -1070,48 +1070,48 @@ std::unique_ptr<web::json::details::_Value> JSON_Parser<CharType>::_ParseValue(
         }
         case JSON_Parser<CharType>::Token::TKN_StringLiteral:
         {
-            auto value = utility::details::make_unique<web::json::details::_String>(std::move(tkn.string_val),
-                                                                                    tkn.has_unescape_symbol);
+            auto value = utility::make_unique<web::json::details::_String>(std::move(tkn.string_val),
+                                                                           tkn.has_unescape_symbol);
             GetNextToken(tkn);
-            if (tkn.m_error) return utility::details::make_unique<web::json::details::_Null>();
+            if (tkn.m_error) return utility::make_unique<web::json::details::_Null>();
             return std::move(value);
         }
         case JSON_Parser<CharType>::Token::TKN_IntegerLiteral:
         {
-            std::unique_ptr<web::json::details::_Number> value;
+            utility::unique_ptr<web::json::details::_Number> value;
             if (tkn.signed_number)
-                value = utility::details::make_unique<web::json::details::_Number>(tkn.int64_val);
+                value = utility::make_unique<web::json::details::_Number>(tkn.int64_val);
             else
-                value = utility::details::make_unique<web::json::details::_Number>(tkn.uint64_val);
+                value = utility::make_unique<web::json::details::_Number>(tkn.uint64_val);
 
             GetNextToken(tkn);
-            if (tkn.m_error) return utility::details::make_unique<web::json::details::_Null>();
+            if (tkn.m_error) return utility::make_unique<web::json::details::_Null>();
             return std::move(value);
         }
         case JSON_Parser<CharType>::Token::TKN_NumberLiteral:
         {
-            auto value = utility::details::make_unique<web::json::details::_Number>(tkn.double_val);
+            auto value = utility::make_unique<web::json::details::_Number>(tkn.double_val);
             GetNextToken(tkn);
-            if (tkn.m_error) return utility::details::make_unique<web::json::details::_Null>();
+            if (tkn.m_error) return utility::make_unique<web::json::details::_Null>();
             return std::move(value);
         }
         case JSON_Parser<CharType>::Token::TKN_BooleanLiteral:
         {
-            auto value = utility::details::make_unique<web::json::details::_Boolean>(tkn.boolean_val);
+            auto value = utility::make_unique<web::json::details::_Boolean>(tkn.boolean_val);
             GetNextToken(tkn);
-            if (tkn.m_error) return utility::details::make_unique<web::json::details::_Null>();
+            if (tkn.m_error) return utility::make_unique<web::json::details::_Null>();
             return std::move(value);
         }
         case JSON_Parser<CharType>::Token::TKN_NullLiteral:
         {
             GetNextToken(tkn);
             // Returning a null value whether or not an error occurred.
-            return utility::details::make_unique<web::json::details::_Null>();
+            return utility::make_unique<web::json::details::_Null>();
         }
         default:
         {
             SetErrorCode(tkn, json_error::malformed_token);
-            return utility::details::make_unique<web::json::details::_Null>();
+            return utility::make_unique<web::json::details::_Null>();
         }
     }
 }
@@ -1129,13 +1129,13 @@ static web::json::value _parse_stream(std::basic_istream<CharType>& stream)
     parser.GetNextToken(tkn);
     if (tkn.m_error)
     {
-        web::json::details::CreateException(tkn, utility::conversions::to_string_t(tkn.m_error.message()));
+        web::json::details::CreateException(tkn, utility::conversions::to_string_t(tkn.m_error.message().c_str()));
     }
 
     auto value = parser.ParseValue(tkn);
     if (tkn.m_error)
     {
-        web::json::details::CreateException(tkn, utility::conversions::to_string_t(tkn.m_error.message()));
+        web::json::details::CreateException(tkn, utility::conversions::to_string_t(tkn.m_error.message().c_str()));
     }
     else if (tkn.kind != web::json::details::JSON_Parser<CharType>::Token::TKN_EOF)
     {
@@ -1177,13 +1177,13 @@ static web::json::value _parse_string(const std::basic_string<CharType>& str)
     parser.GetNextToken(tkn);
     if (tkn.m_error)
     {
-        web::json::details::CreateException(tkn, utility::conversions::to_string_t(tkn.m_error.message()));
+        web::json::details::CreateException(tkn, utility::conversions::to_string_t(tkn.m_error.message().c_str()));
     }
 
     auto value = parser.ParseValue(tkn);
     if (tkn.m_error)
     {
-        web::json::details::CreateException(tkn, utility::conversions::to_string_t(tkn.m_error.message()));
+        web::json::details::CreateException(tkn, utility::conversions::to_string_t(tkn.m_error.message().c_str()));
     }
     else if (tkn.kind != web::json::details::JSON_Parser<CharType>::Token::TKN_EOF)
     {

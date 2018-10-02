@@ -50,7 +50,7 @@ struct outgoing_msg_queue
 
 private:
     std::mutex m_lock;
-    std::queue<websocket_outgoing_message> m_queue;
+    utility::queue<websocket_outgoing_message> m_queue;
 };
 
 } // namespace details

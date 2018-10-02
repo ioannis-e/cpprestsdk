@@ -82,7 +82,7 @@ void trim_nulls(std::basic_string<Char>& str)
 }
 
 template<class Char>
-void trim_whitespace(std::basic_string<Char>& str)
+void trim_whitespace(utility::basic_string<Char>& str)
 {
     trim_if(str, [](const Char c) { return ::utility::details::is_space(c); });
 }
@@ -109,7 +109,7 @@ namespace builtin
 /// Helper function to get the set of built-in decompress factories
 /// </summary>
 
-const std::vector<std::shared_ptr<web::http::compression::decompress_factory>> get_decompress_factories();
+const utility::vector<std::shared_ptr<web::http::compression::decompress_factory>> get_decompress_factories();
 
 } // namespace builtin
 } // namespace details

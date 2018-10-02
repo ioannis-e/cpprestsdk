@@ -35,7 +35,7 @@ namespace
 /// </summary>
 inline bool is_unreserved(int c)
 {
-    return ::utility::details::is_alnum((char)c) || c == '-' || c == '.' || c == '_' || c == '~';
+    return utility::details::is_alnum((char)c) || c == '-' || c == '.' || c == '_' || c == '~';
 }
 
 /// <summary>
@@ -90,7 +90,7 @@ inline bool is_reserved(int c) { return is_gen_delim(c) || is_sub_delim(c); }
 /// </summary>
 inline bool is_scheme_character(int c)
 {
-    return ::utility::details::is_alnum((char)c) || c == '+' || c == '-' || c == '.';
+    return utility::details::is_alnum((char)c) || c == '+' || c == '-' || c == '.';
 }
 
 /// <summary>
@@ -436,8 +436,8 @@ utility::string_t mergePaths(const utility::string_t& base, const utility::strin
 // 5.2.4. Remove Dot Segments https://tools.ietf.org/html/rfc3986#section-5.2.4
 void removeDotSegments(uri_builder& builder)
 {
-    const ::utility::string_t dotSegment = _XPLATSTR(".");
-    const ::utility::string_t dotDotSegment = _XPLATSTR("..");
+    const utility::string_t dotSegment = _XPLATSTR(".");
+    const utility::string_t dotDotSegment = _XPLATSTR("..");
 
     if (builder.path().find(_XPLATSTR('.')) == utility::string_t::npos) return;
 
@@ -657,9 +657,9 @@ static int hex_char_digit_to_decimal_char(int hex)
 }
 
 template<class String>
-static std::string decode_template(const String& encoded)
+static utility::string decode_template(const String& encoded)
 {
-    std::string raw;
+    utility::string raw;
     for (auto iter = encoded.begin(); iter != encoded.end(); ++iter)
     {
         if (*iter == '%')
@@ -692,9 +692,9 @@ static std::string decode_template(const String& encoded)
 
 utility::string_t uri::decode(const utility::string_t& encoded) { return to_string_t(decode_template(encoded)); }
 
-std::vector<utility::string_t> uri::split_path(const utility::string_t& path)
+utility::vector<utility::string_t> uri::split_path(const utility::string_t& path)
 {
-    std::vector<utility::string_t> results;
+    utility::vector<utility::string_t> results;
     utility::istringstream_t iss(path);
     iss.imbue(std::locale::classic());
     utility::string_t s;
@@ -710,9 +710,9 @@ std::vector<utility::string_t> uri::split_path(const utility::string_t& path)
     return results;
 }
 
-std::map<utility::string_t, utility::string_t> uri::split_query(const utility::string_t& query)
+utility::map<utility::string_t, utility::string_t> uri::split_query(const utility::string_t& query)
 {
-    std::map<utility::string_t, utility::string_t> results;
+    utility::map<utility::string_t, utility::string_t> results;
 
     // Split into key value pairs separated by '&'.
     size_t prev_amp_index = 0;

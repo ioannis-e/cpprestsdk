@@ -597,18 +597,18 @@ class generic_compress_factory : public compress_factory
 public:
     ~generic_compress_factory() CPPREST_NOEXCEPT {}
     generic_compress_factory(const utility::string_t& algorithm,
-                             std::function<std::unique_ptr<compress_provider>()> make_compressor)
+                             std::function<utility::unique_ptr<compress_provider>()> make_compressor)
         : m_algorithm(algorithm), _make_compressor(make_compressor)
     {
     }
 
     const utility::string_t& algorithm() const { return m_algorithm; }
 
-    std::unique_ptr<compress_provider> make_compressor() const { return _make_compressor(); }
+    utility::unique_ptr<compress_provider> make_compressor() const { return _make_compressor(); }
 
 private:
     const utility::string_t m_algorithm;
-    std::function<std::unique_ptr<compress_provider>()> _make_compressor;
+    std::function<utility::unique_ptr<compress_provider>()> _make_compressor;
 };
 
 // Generic internal implementation of the decompress_factory API
@@ -618,7 +618,7 @@ public:
     ~generic_decompress_factory() CPPREST_NOEXCEPT {}
     generic_decompress_factory(const utility::string_t& algorithm,
                                uint16_t weight,
-                               std::function<std::unique_ptr<decompress_provider>()> make_decompressor)
+                               std::function<utility::unique_ptr<decompress_provider>()> make_decompressor)
         : m_algorithm(algorithm), m_weight(weight), _make_decompressor(make_decompressor)
     {
     }
@@ -627,49 +627,49 @@ public:
 
     uint16_t weight() const { return m_weight; }
 
-    std::unique_ptr<decompress_provider> make_decompressor() const { return _make_decompressor(); }
+    utility::unique_ptr<decompress_provider> make_decompressor() const { return _make_decompressor(); }
 
 private:
     const utility::string_t m_algorithm;
     uint16_t m_weight;
-    std::function<std::unique_ptr<decompress_provider>()> _make_decompressor;
+    std::function<utility::unique_ptr<decompress_provider>()> _make_decompressor;
 };
 
 // "Private" algorithm-to-factory tables for namespace static helpers
-static const std::vector<std::shared_ptr<compress_factory>> g_compress_factories
+static const utility::vector<std::shared_ptr<compress_factory>> g_compress_factories
 #if defined(CPPREST_HTTP_COMPRESSION)
-    = {std::make_shared<generic_compress_factory>(
+    = {utility::make_shared<generic_compress_factory>(
            algorithm::GZIP,
-           []() -> std::unique_ptr<compress_provider> { return utility::details::make_unique<gzip_compressor>(); }),
-       std::make_shared<generic_compress_factory>(
+           []() -> utility::unique_ptr<compress_provider> { return utility::make_unique<gzip_compressor>(); }),
+       utility::make_shared<generic_compress_factory>(
            algorithm::DEFLATE,
-           []() -> std::unique_ptr<compress_provider> { return utility::details::make_unique<deflate_compressor>(); }),
+           []() -> utility::unique_ptr<compress_provider> { return utility::make_unique<deflate_compressor>(); }),
 #if defined(CPPREST_BROTLI_COMPRESSION)
-       std::make_shared<generic_compress_factory>(
+       utility::make_shared<generic_compress_factory>(
            algorithm::BROTLI,
-           []() -> std::unique_ptr<compress_provider> { return utility::details::make_unique<brotli_compressor>(); })
+           []() -> utility::unique_ptr<compress_provider> { return utility::make_unique<brotli_compressor>(); })
 #endif // CPPREST_BROTLI_COMPRESSION
 };
 #else  // CPPREST_HTTP_COMPRESSION
     ;
 #endif // CPPREST_HTTP_COMPRESSION
 
-static const std::vector<std::shared_ptr<decompress_factory>> g_decompress_factories
+static const utility::vector<std::shared_ptr<decompress_factory>> g_decompress_factories
 #if defined(CPPREST_HTTP_COMPRESSION)
-    = {std::make_shared<generic_decompress_factory>(
+    = {utility::make_shared<generic_decompress_factory>(
            algorithm::GZIP,
            500,
-           []() -> std::unique_ptr<decompress_provider> { return utility::details::make_unique<gzip_decompressor>(); }),
-       std::make_shared<generic_decompress_factory>(algorithm::DEFLATE,
+           []() -> utility::unique_ptr<decompress_provider> { return utility::make_unique<gzip_decompressor>(); }),
+       utility::make_shared<generic_decompress_factory>(algorithm::DEFLATE,
                                                     500,
-                                                    []() -> std::unique_ptr<decompress_provider> {
-                                                        return utility::details::make_unique<deflate_decompressor>();
+                                                    []() -> utility::unique_ptr<decompress_provider> {
+                                                        return utility::make_unique<deflate_decompressor>();
                                                     }),
 #if defined(CPPREST_BROTLI_COMPRESSION)
-       std::make_shared<generic_decompress_factory>(algorithm::BROTLI,
+       utility::make_shared<generic_decompress_factory>(algorithm::BROTLI,
                                                     500,
-                                                    []() -> std::unique_ptr<decompress_provider> {
-                                                        return utility::details::make_unique<brotli_decompressor>();
+                                                    []() -> utility::unique_ptr<decompress_provider> {
+                                                        return utility::make_unique<brotli_decompressor>();
                                                     })
 #endif // CPPREST_BROTLI_COMPRESSION
 };
@@ -692,8 +692,8 @@ bool algorithm::supported(const utility::string_t& algorithm)
     return false;
 }
 
-static std::unique_ptr<compress_provider> _make_compressor(
-    const std::vector<std::shared_ptr<compress_factory>>& factories, const utility::string_t& algorithm)
+static utility::unique_ptr<compress_provider> _make_compressor(
+    const utility::vector<std::shared_ptr<compress_factory>>& factories, const utility::string_t& algorithm)
 {
     for (auto& factory : factories)
     {
@@ -703,16 +703,16 @@ static std::unique_ptr<compress_provider> _make_compressor(
         }
     }
 
-    return std::unique_ptr<compress_provider>();
+    return utility::unique_ptr<compress_provider>();
 }
 
-std::unique_ptr<compress_provider> make_compressor(const utility::string_t& algorithm)
+utility::unique_ptr<compress_provider> make_compressor(const utility::string_t& algorithm)
 {
     return _make_compressor(g_compress_factories, algorithm);
 }
 
-static std::unique_ptr<decompress_provider> _make_decompressor(
-    const std::vector<std::shared_ptr<decompress_factory>>& factories, const utility::string_t& algorithm)
+static utility::unique_ptr<decompress_provider> _make_decompressor(
+    const utility::vector<std::shared_ptr<decompress_factory>>& factories, const utility::string_t& algorithm)
 {
     for (auto& factory : factories)
     {
@@ -722,10 +722,10 @@ static std::unique_ptr<decompress_provider> _make_decompressor(
         }
     }
 
-    return std::unique_ptr<decompress_provider>();
+    return utility::unique_ptr<decompress_provider>();
 }
 
-std::unique_ptr<decompress_provider> make_decompressor(const utility::string_t& algorithm)
+utility::unique_ptr<decompress_provider> make_decompressor(const utility::string_t& algorithm)
 {
     return _make_decompressor(g_decompress_factories, algorithm);
 }
@@ -756,37 +756,37 @@ std::shared_ptr<decompress_factory> get_decompress_factory(const utility::string
     return std::shared_ptr<decompress_factory>();
 }
 
-std::unique_ptr<compress_provider> make_gzip_compressor(int compressionLevel, int method, int strategy, int memLevel)
+utility::unique_ptr<compress_provider> make_gzip_compressor(int compressionLevel, int method, int strategy, int memLevel)
 {
 #if defined(CPPREST_HTTP_COMPRESSION)
-    return utility::details::make_unique<gzip_compressor>(compressionLevel, method, strategy, memLevel);
+    return utility::make_unique<gzip_compressor>(compressionLevel, method, strategy, memLevel);
 #else  // CPPREST_HTTP_COMPRESSION
     (void)compressionLevel;
     (void)method;
     (void)strategy;
     (void)memLevel;
-    return std::unique_ptr<compress_provider>();
+    return utility::unique_ptr<compress_provider>();
 #endif // CPPREST_HTTP_COMPRESSION
 }
 
-std::unique_ptr<compress_provider> make_deflate_compressor(int compressionLevel, int method, int strategy, int memLevel)
+utility::unique_ptr<compress_provider> make_deflate_compressor(int compressionLevel, int method, int strategy, int memLevel)
 {
 #if defined(CPPREST_HTTP_COMPRESSION)
-    return utility::details::make_unique<deflate_compressor>(compressionLevel, method, strategy, memLevel);
+    return utility::make_unique<deflate_compressor>(compressionLevel, method, strategy, memLevel);
 #else  // CPPREST_HTTP_COMPRESSION
     (void)compressionLevel;
     (void)method;
     (void)strategy;
     (void)memLevel;
-    return std::unique_ptr<compress_provider>();
+    return utility::unique_ptr<compress_provider>();
 #endif // CPPREST_HTTP_COMPRESSION
 }
 
-std::unique_ptr<compress_provider> make_brotli_compressor(
+utility::unique_ptr<compress_provider> make_brotli_compressor(
     uint32_t window, uint32_t quality, uint32_t mode, uint32_t block, uint32_t nomodel, uint32_t hint)
 {
 #if defined(CPPREST_HTTP_COMPRESSION) && defined(CPPREST_BROTLI_COMPRESSION)
-    return utility::details::make_unique<brotli_compressor>(window, quality, mode, block, nomodel, hint);
+    return utility::make_unique<brotli_compressor>(window, quality, mode, block, nomodel, hint);
 #else  // CPPREST_BROTLI_COMPRESSION
     (void)window;
     (void)quality;
@@ -794,13 +794,13 @@ std::unique_ptr<compress_provider> make_brotli_compressor(
     (void)block;
     (void)nomodel;
     (void)hint;
-    return std::unique_ptr<compress_provider>();
+    return utility::unique_ptr<compress_provider>();
 #endif // CPPREST_BROTLI_COMPRESSION
 }
 } // namespace builtin
 
 std::shared_ptr<compress_factory> make_compress_factory(
-    const utility::string_t& algorithm, std::function<std::unique_ptr<compress_provider>()> make_compressor)
+    const utility::string_t& algorithm, std::function<utility::unique_ptr<compress_provider>()> make_compressor)
 {
     return std::make_shared<builtin::generic_compress_factory>(algorithm, make_compressor);
 }
@@ -808,7 +808,7 @@ std::shared_ptr<compress_factory> make_compress_factory(
 std::shared_ptr<decompress_factory> make_decompress_factory(
     const utility::string_t& algorithm,
     uint16_t weight,
-    std::function<std::unique_ptr<decompress_provider>()> make_decompressor)
+    std::function<utility::unique_ptr<decompress_provider>()> make_decompressor)
 {
     return std::make_shared<builtin::generic_decompress_factory>(algorithm, weight, make_decompressor);
 }
@@ -817,7 +817,7 @@ namespace details
 {
 namespace builtin
 {
-const std::vector<std::shared_ptr<decompress_factory>> get_decompress_factories()
+const utility::vector<std::shared_ptr<decompress_factory>> get_decompress_factories()
 {
     return web::http::compression::builtin::g_decompress_factories;
 }
@@ -838,21 +838,21 @@ static void remove_surrounding_http_whitespace(const utility::string_t& encoding
     }
 }
 
-std::unique_ptr<compress_provider> get_compressor_from_header(
+utility::unique_ptr<compress_provider> get_compressor_from_header(
     const utility::string_t& encoding,
     header_types type,
-    const std::vector<std::shared_ptr<compress_factory>>& factories)
+    const utility::vector<std::shared_ptr<compress_factory>>& factories)
 {
-    const std::vector<std::shared_ptr<compress_factory>>& f =
+    const utility::vector<std::shared_ptr<compress_factory>>& f =
         factories.empty() ? web::http::compression::builtin::g_compress_factories : factories;
-    std::unique_ptr<compress_provider> compressor;
+    utility::unique_ptr<compress_provider> compressor;
     struct _tuple
     {
         size_t start;
         size_t length;
         size_t rank;
     } t;
-    std::vector<_tuple> tokens;
+    utility::vector<_tuple> tokens;
     size_t highest;
     size_t mark;
     size_t end;
@@ -934,7 +934,7 @@ std::unique_ptr<compress_provider> get_compressor_from_header(
                 // An entirely empty header is OK per RFC, but an extraneous comma is not
                 throw http_exception(status_codes::BadRequest, "Empty field in header");
             }
-            return std::unique_ptr<compress_provider>();
+            return utility::unique_ptr<compress_provider>();
         }
 
         if (!compressor)
@@ -993,21 +993,21 @@ std::unique_ptr<compress_provider> get_compressor_from_header(
         if (type == header_types::accept_encoding && utility::details::str_iequal(coding, _XPLATSTR("identity")))
         {
             // The client specified a preference for "no encoding" vs. anything else we might still have
-            return std::unique_ptr<compress_provider>();
+            return utility::unique_ptr<compress_provider>();
         }
     }
 
-    return std::unique_ptr<compress_provider>();
+    return utility::unique_ptr<compress_provider>();
 }
 
-std::unique_ptr<decompress_provider> get_decompressor_from_header(
+utility::unique_ptr<decompress_provider> get_decompressor_from_header(
     const utility::string_t& encoding,
     header_types type,
-    const std::vector<std::shared_ptr<decompress_factory>>& factories)
+    const utility::vector<std::shared_ptr<decompress_factory>>& factories)
 {
-    const std::vector<std::shared_ptr<decompress_factory>>& f =
+    const utility::vector<std::shared_ptr<decompress_factory>>& f =
         factories.empty() ? web::http::compression::builtin::g_decompress_factories : factories;
-    std::unique_ptr<decompress_provider> decompressor;
+    utility::unique_ptr<decompress_provider> decompressor;
     utility::string_t token;
     size_t start;
     size_t length;
@@ -1095,9 +1095,9 @@ std::unique_ptr<decompress_provider> get_decompressor_from_header(
 }
 
 utility::string_t build_supported_header(header_types type,
-                                         const std::vector<std::shared_ptr<decompress_factory>>& factories)
+                                         const utility::vector<std::shared_ptr<decompress_factory>>& factories)
 {
-    const std::vector<std::shared_ptr<decompress_factory>>& f =
+    const utility::vector<std::shared_ptr<decompress_factory>>& f =
         factories.empty() ? web::http::compression::builtin::g_decompress_factories : factories;
     utility::string_t result;
     bool start;

@@ -76,14 +76,14 @@ struct uri_components
 class uri_exception : public std::exception
 {
 public:
-    uri_exception(std::string msg) : m_msg(std::move(msg)) {}
+    uri_exception(utility::string msg) : m_msg(std::move(msg)) {}
 
     ~uri_exception() CPPREST_NOEXCEPT {}
 
     const char* what() const CPPREST_NOEXCEPT { return m_msg.c_str(); }
 
 private:
-    std::string m_msg;
+    utility::string m_msg;
 };
 
 /// <summary>
@@ -162,16 +162,16 @@ public:
     /// Splits a path into its hierarchical components.
     /// </summary>
     /// <param name="path">The path as a string</param>
-    /// <returns>A <c>std::vector&lt;utility::string_t&gt;</c> containing the segments in the path.</returns>
-    _ASYNCRTIMP static std::vector<utility::string_t> __cdecl split_path(const utility::string_t& path);
+    /// <returns>A <c>utility::vector&lt;utility::string_t&gt;</c> containing the segments in the path.</returns>
+    _ASYNCRTIMP static utility::vector<utility::string_t> __cdecl split_path(const utility::string_t& path);
 
     /// <summary>
     /// Splits a query into its key-value components.
     /// </summary>
     /// <param name="query">The query string</param>
-    /// <returns>A <c>std::map&lt;utility::string_t, utility::string_t&gt;</c> containing the key-value components of
+    /// <returns>A <c>utility::map&lt;utility::string_t, utility::string_t&gt;</c> containing the key-value components of
     /// the query.</returns>
-    _ASYNCRTIMP static std::map<utility::string_t, utility::string_t> __cdecl split_query(
+    _ASYNCRTIMP static utility::map<utility::string_t, utility::string_t> __cdecl split_query(
         const utility::string_t& query);
 
     /// <summary>

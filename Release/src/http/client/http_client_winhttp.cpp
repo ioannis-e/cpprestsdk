@@ -54,9 +54,9 @@ CPPREST_CONSTEXPR security_failure_message g_security_failure_messages[] = {
      "WINHTTP_CALLBACK_STATUS_FLAG_SECURITY_CHANNEL_ERROR internal error."},
 };
 
-std::string generate_security_failure_message(std::uint32_t flags)
+utility::string generate_security_failure_message(std::uint32_t flags)
 {
-    std::string result("SSL Error:");
+    utility::string result("SSL Error:");
     for (const auto& message : g_security_failure_messages)
     {
         if (flags & message.flag)
@@ -140,18 +140,18 @@ static void parse_winhttp_headers(HINTERNET request_handle, _In_z_ utility::char
 }
 
 // Helper function to build error messages.
-static std::string build_error_msg(unsigned long code, const std::string& location)
+static utility::string build_error_msg(unsigned long code, const utility::string& location)
 {
-    std::string msg(location);
+    utility::string msg(location);
     msg.append(": ");
-    msg.append(std::to_string(code));
+    msg.append(utility::conversions::details::to_string(code));
     msg.append(": ");
     msg.append(utility::details::platform_category().message(static_cast<int>(code)));
     return msg;
 }
 
 // Helper function to build an error message from a WinHTTP async result.
-static std::string build_error_msg(_In_ WINHTTP_ASYNC_RESULT* error_result)
+static utility::string build_error_msg(_In_ WINHTTP_ASYNC_RESULT* error_result)
 {
     switch (error_result->dwResult)
     {
@@ -168,7 +168,7 @@ static std::string build_error_msg(_In_ WINHTTP_ASYNC_RESULT* error_result)
 class memory_holder
 {
     uint8_t* m_externalData;
-    std::vector<uint8_t> m_internalData;
+    utility::vector<uint8_t> m_internalData;
     size_t m_size;
 
 public:
@@ -238,7 +238,7 @@ public:
     static std::shared_ptr<request_context> create_request_context(
         const std::shared_ptr<_http_client_communicator>& client, const http_request& request)
     {
-        std::shared_ptr<winhttp_request_context> ret(new winhttp_request_context(client, request));
+        std::shared_ptr<winhttp_request_context> ret = utility::make_shared<winhttp_request_context>(private_constructor_cookie(), client, request);
         ret->m_self_reference = ret;
         return std::move(ret);
     }
@@ -280,7 +280,7 @@ public:
     // requests, etc... Then if the request stream buffer doesn't support seeking we need to copy the body chunks as it
     // is sent.
     concurrency::streams::istream m_readStream;
-    std::unique_ptr<concurrency::streams::container_buffer<std::vector<uint8_t>>> m_readBufferCopy;
+    utility::unique_ptr<concurrency::streams::container_buffer<utility::vector<uint8_t>>> m_readBufferCopy;
     virtual concurrency::streams::streambuf<uint8_t> _get_readbuffer() { return m_readStream.streambuf(); }
 
     // This self reference will keep us alive until finish() is called.
@@ -522,7 +522,7 @@ public:
             bool m_trailer;         // if true, we're processing (and ignoring) a trailer field; m_ignore is also true
         };
 
-        std::vector<uint8_t> m_buffer; // we read data from the stream into this before compressing
+        utility::vector<uint8_t> m_buffer; // we read data from the stream into this before compressing
         uint8_t* m_acquired; // we use this in place of m_buffer if the stream has directly-accessible data available
         size_t m_bytes_read; // we most recently read this many bytes, which may be less than m_buffer.size()
         size_t m_bytes_processed; // we've compressed this many bytes of m_bytes_read so far
@@ -532,7 +532,7 @@ public:
         bool m_done;          // we've read, compressed, and consumed all bytes
         bool m_chunked;       // if true, we need to decode and decompress a transfer-encoded message
         size_t m_chunk_bytes; // un-decompressed bytes remaining in the most-recently-obtained data from m_chunk
-        std::unique_ptr<_chunk_helper> m_chunk;
+        utility::unique_ptr<_chunk_helper> m_chunk;
     } m_compression_state;
 
     void cleanup()
@@ -678,7 +678,7 @@ protected:
 
 private:
     utility::string_t m_customCnCheck;
-    std::vector<unsigned char> m_cachedEncodedCert;
+    utility::vector<unsigned char> m_cachedEncodedCert;
 
     // Can only create on the heap using factory function.
     winhttp_request_context(const std::shared_ptr<_http_client_communicator>& client, const http_request& request)
@@ -885,7 +885,7 @@ protected:
                 if (uri.port() > 0)
                 {
                     proxy_str.push_back(_XPLATSTR(':'));
-                    proxy_str.append(::utility::conversions::details::to_string_t(uri.port()));
+                    proxy_str.append(utility::conversions::details::to_string_t(uri.port()));
                 }
 
                 proxy_name = proxy_str.c_str();
@@ -1222,7 +1222,7 @@ protected:
             !winhttp_context->_get_readbuffer().can_seek())
         {
             winhttp_context->m_readBufferCopy =
-                ::utility::details::make_unique<::concurrency::streams::container_buffer<std::vector<uint8_t>>>();
+                utility::make_unique<::concurrency::streams::container_buffer<utility::vector<uint8_t>>>();
         }
 
         _start_request_send(winhttp_context, content_length);
@@ -1285,7 +1285,7 @@ private:
             // If bytes read is less than the chunk size this request is done.
             // Is it really, though?  The WinHttpReadData docs suggest that less can be returned regardless...
             const size_t chunkSize = pContext->m_http_client->client_config().chunksize();
-            std::unique_ptr<compression::decompress_provider>& decompressor = pContext->m_decompressor;
+            utility::unique_ptr<compression::decompress_provider>& decompressor = pContext->m_decompressor;
             if (!decompressor && bytesRead < chunkSize && !firstRead)
             {
                 pContext->complete_request(pContext->m_downloaded);
@@ -1322,7 +1322,7 @@ private:
     static void _transfer_encoding_chunked_write_data(_In_ winhttp_request_context* p_request_context)
     {
         size_t chunk_size;
-        std::unique_ptr<compression::compress_provider>& compressor = p_request_context->m_request.compressor();
+        utility::unique_ptr<compression::compress_provider>& compressor = p_request_context->m_request.compressor();
 
         // Set the chunk size up front; we need it before the lambda functions come into scope
         if (compressor)
@@ -1413,7 +1413,7 @@ private:
                 {
                     // Move the saved buffer into the read buffer, which now supports seeking.
                     p_request_context->m_readStream =
-                        concurrency::streams::container_stream<std::vector<uint8_t>>::open_istream(
+                        concurrency::streams::container_stream<utility::vector<uint8_t>>::open_istream(
                             std::move(p_request_context->m_readBufferCopy->collection()));
                     p_request_context->m_readBufferCopy.reset();
                 }
@@ -1717,9 +1717,9 @@ private:
         }
     }
 
-    static utility::string_t get_request_url(HINTERNET hRequestHandle)
+    static utility::wstring get_request_url(HINTERNET hRequestHandle)
     {
-        utility::string_t url;
+        utility::wstring url;
         auto urlSize = static_cast<unsigned long>(url.capacity()) * 2; // use initial small string optimization capacity
         for (;;)
         {
@@ -1834,12 +1834,11 @@ private:
 
             // New scope to ensure plaintext password is cleared as soon as possible.
             {
-                auto password = cred._internal_decrypt();
                 if (!WinHttpSetCredentials(hRequestHandle,
                                            dwAuthTarget,
                                            dwSelectedScheme,
                                            cred.username().c_str(),
-                                           password->c_str(),
+                                           cred._internal_decrypt()->c_str(),
                                            nullptr))
                 {
                     return false;
@@ -1907,11 +1906,16 @@ private:
             // This callback is responsible for freeing the type-erased context.
             // This particular status code indicates that this is the final callback call, suitable for context
             // destruction.
-            delete p_weak_request_context;
+            auto lock = p_weak_request_context->lock();
+            if (lock) {
+                lock->cleanup();
+            } else {
+                utility::unique_ptr<std::weak_ptr<winhttp_request_context>> weak_context_holder(p_weak_request_context);
+            }
             return;
         }
 
-        auto p_request_context = p_weak_request_context->lock();
+        std::shared_ptr<winhttp_request_context> p_request_context = p_weak_request_context->lock();
         if (!p_request_context)
         {
             // The request context was already released, probably due to cancellation
@@ -2040,7 +2044,7 @@ private:
                 query_header_length(hRequestHandle, WINHTTP_QUERY_RAW_HEADERS_CRLF, headerBufferLength);
 
                 // Now allocate buffer for headers and query for them.
-                std::vector<unsigned char> header_raw_buffer;
+                utility::vector<unsigned char> header_raw_buffer;
                 header_raw_buffer.resize(headerBufferLength);
                 utility::char_t* header_buffer = reinterpret_cast<utility::char_t*>(&header_raw_buffer[0]);
                 if (!WinHttpQueryHeaders(hRequestHandle,
@@ -2080,7 +2084,7 @@ private:
                     !p_request_context->m_http_client->client_config().request_compressed_response())
                 {
                     p_request_context->m_compression_state.m_chunk =
-                        ::utility::details::make_unique<winhttp_request_context::compression_state::_chunk_helper>();
+                        utility::make_unique<winhttp_request_context::compression_state::_chunk_helper>();
                     p_request_context->m_compression_state.m_chunked = true;
                 }
 
@@ -2491,7 +2495,7 @@ private:
 std::shared_ptr<_http_client_communicator> create_platform_final_pipeline_stage(uri&& base_uri,
                                                                                 http_client_config&& client_config)
 {
-    return std::make_shared<details::winhttp_client>(std::move(base_uri), std::move(client_config));
+    return utility::make_shared<details::winhttp_client>(std::move(base_uri), std::move(client_config));
 }
 
 

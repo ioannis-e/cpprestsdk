@@ -43,14 +43,14 @@ struct java_local_ref_deleter
 };
 
 template<class T>
-using java_local_ref = std::unique_ptr<typename std::remove_pointer<T>::type, java_local_ref_deleter>;
+using java_local_ref = utility::unique_ptr<typename std::remove_pointer<T>::type, java_local_ref_deleter>;
 #endif
 
 class threadpool
 {
 public:
     _ASYNCRTIMP static threadpool& shared_instance();
-    _ASYNCRTIMP static std::unique_ptr<threadpool> __cdecl construct(size_t num_threads);
+    _ASYNCRTIMP static utility::unique_ptr<threadpool> __cdecl construct(size_t num_threads);
 
     virtual ~threadpool() = default;
 

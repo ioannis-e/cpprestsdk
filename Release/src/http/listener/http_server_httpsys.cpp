@@ -93,7 +93,7 @@ static utility::string_t HttpServerAPIRequestKnownHeaders[] =
 
 static void char_to_wstring(utf16string& dest, const char* src)
 {
-    dest = utility::conversions::to_utf16string(std::string(src));
+    dest = utility::conversions::to_utf16string(src);
 }
 
 http::method parse_request_method(const HTTP_REQUEST* p_request)
@@ -251,8 +251,7 @@ pplx::task<void> http_windows_server::register_listener(
             HttpCloseUrlGroup(urlGroupId);
             throw std::invalid_argument("Error: http_listener is already registered");
         }
-        _M_registeredListeners[pListener] =
-            std::unique_ptr<listener_registration>(new listener_registration(urlGroupId));
+        _M_registeredListeners[pListener] = utility::make_unique<listener_registration>(urlGroupId);
     }
 
     // Associate Url group with request queue.
@@ -274,7 +273,7 @@ pplx::task<void> http_windows_server::unregister_listener(
 {
     return pplx::create_task([=]() {
         // First remove listener registration.
-        std::unique_ptr<listener_registration> registration;
+        utility::unique_ptr<listener_registration> registration;
         {
             pplx::extensibility::scoped_rw_lock_t lock(_M_listenersLock);
             registration = std::move(_M_registeredListeners[pListener]);
@@ -387,8 +386,8 @@ void http_windows_server::receive_requests()
         }
 
         // Start processing the request
-        auto pContext = new windows_request_context();
-        auto pRequestContext = std::unique_ptr<_http_server_context>(pContext);
+        utility::unique_ptr<windows_request_context> pRequestContext = utility::make_unique<windows_request_context>();
+        windows_request_context* pContext = pRequestContext.get();
         http_request msg = http_request::_create_request(std::move(pRequestContext));
         pContext->async_process_request(p_request.RequestId, msg, bytes_received);
     }
@@ -449,9 +448,8 @@ void windows_request_context::async_process_request(HTTP_REQUEST_ID request_id,
     // Save the http_request as the member of windows_request_context for the callback use.
     m_msg = msg;
 
-    m_request_buffer =
-        std::unique_ptr<unsigned char[]>(new unsigned char[msl::safeint3::SafeInt<unsigned long>(headers_size)]);
-    m_request = (HTTP_REQUEST*)m_request_buffer.get();
+    m_request_buffer = utility::make_unique<unsigned char[]>(msl::safeint3::SafeInt<unsigned long>(headers_size));
+    m_request = (HTTP_REQUEST*) m_request_buffer.get();
 
     // The read_headers_io_completion callback function.
     m_overlapped.set_http_io_completion(
@@ -483,7 +481,7 @@ void windows_request_context::read_headers_io_completion(DWORD error_code, DWORD
     else
     {
         utility::string_t header;
-        std::string badRequestMsg;
+        utility::string badRequestMsg;
         try
         {
             // HTTP_REQUEST::pRawUrl contains the raw URI that came across the wire.
@@ -570,7 +568,7 @@ void windows_request_context::read_headers_io_completion(DWORD error_code, DWORD
             {(uint8_t)m_request->Version.MajorVersion, (uint8_t)m_request->Version.MinorVersion});
 
         // Retrieve the remote IP address
-        std::vector<wchar_t> remoteAddressBuffer(50);
+        utility::vector<wchar_t> remoteAddressBuffer(50);
 
         if (m_request->Address.pRemoteAddress->sa_family == AF_INET6)
         {
@@ -865,7 +863,7 @@ void windows_request_context::async_process_response()
     HTTP_RESPONSE win_api_response;
     ZeroMemory(&win_api_response, sizeof(win_api_response));
     win_api_response.StatusCode = m_response.status_code();
-    const std::string reason = utf16_to_utf8(m_response.reason_phrase());
+    const utility::string reason = utf16_to_utf8(m_response.reason_phrase());
     win_api_response.pReason = reason.c_str();
     win_api_response.ReasonLength = (USHORT)reason.size();
     size_t content_length;
@@ -917,8 +915,7 @@ void windows_request_context::async_process_response()
         content_length = m_response._get_impl()->_get_content_length();
     }
 
-    m_headers = std::unique_ptr<HTTP_UNKNOWN_HEADER[]>(
-        new HTTP_UNKNOWN_HEADER[msl::safeint3::SafeInt<size_t>(m_response.headers().size())]);
+    m_headers = utility::make_unique<HTTP_UNKNOWN_HEADER[]>(msl::safeint3::SafeInt<size_t>(m_response.headers().size()));
     m_headers_buffer.resize(msl::safeint3::SafeInt<size_t>(m_response.headers().size()) * 2);
 
     win_api_response.Headers.UnknownHeaderCount = (USHORT)m_response.headers().size();
@@ -1257,7 +1254,7 @@ void windows_request_context::cancel_request(std::exception_ptr except_ptr)
     }
 }
 
-std::unique_ptr<http_server> make_http_httpsys_server() { return std::make_unique<http_windows_server>(); }
+utility::unique_ptr<http_server> make_http_httpsys_server() { return utility::make_unique<http_windows_server>(); }
 
 } // namespace details
 } // namespace experimental

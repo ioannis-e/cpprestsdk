@@ -698,7 +698,7 @@ private:
     pplx::task<void> flush_internal()
     {
         pplx::task_completion_event<void> result_tce;
-        auto callback = utility::details::make_unique<_filestream_callback_write_b>(m_info, result_tce);
+        auto callback = utility::make_unique<_filestream_callback_write_b>(m_info, result_tce);
 
         if (!_sync_fsb(m_info, callback.get()))
         {

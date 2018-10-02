@@ -546,7 +546,7 @@ public:
 };
 
 /// <summary>
-/// The stringstream allows an input stream to be constructed from std::string or std::wstring
+/// The stringstream allows an input stream to be constructed from utility::string or std::wstring
 /// For output streams the underlying string container could be retrieved using <c>buf-&gt;collection().</c>
 /// </summary>
 typedef container_stream<std::basic_string<char>> stringstream;
