@@ -95,7 +95,7 @@ void CALLBACK IoCompletionCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTrans
     ////Map this error code to system error code:ERROR_HANDLE_EOF
     if (dwErrorCode == 0xc0000011) dwErrorCode = ERROR_HANDLE_EOF;
     pExtOverlapped->func(dwErrorCode, dwNumberOfBytesTransfered, pOverlapped);
-    delete pOverlapped;
+    utility::delete_pointer(pExtOverlapped);
 }
 #else
 void CALLBACK IoCompletionCallback(PTP_CALLBACK_INSTANCE instance,
@@ -111,7 +111,7 @@ void CALLBACK IoCompletionCallback(PTP_CALLBACK_INSTANCE instance,
 
     EXTENDED_OVERLAPPED* pExtOverlapped = static_cast<EXTENDED_OVERLAPPED*>(pOverlapped);
     pExtOverlapped->func(result, static_cast<DWORD>(numberOfBytesTransferred), static_cast<LPOVERLAPPED>(pOverlapped));
-    delete pOverlapped;
+    utility::delete_pointer(pExtOverlapped);
 }
 #endif
 
@@ -199,7 +199,7 @@ void _finish_create(HANDLE fh, _In_ _filestream_callback* callback, std::ios_bas
     // happen.
     bool buffer = (mode == std::ios_base::in) && (prot == _SH_DENYRW);
 
-    auto info = new _file_info_impl(fh, io_ctxt, mode, buffer ? 512 : 0);
+    _file_info_impl* info = utility::make_pointer<_file_info_impl>(fh, io_ctxt, mode, buffer ? 512 : 0);
 
     if (mode & std::ios_base::app || mode & std::ios_base::ate)
     {
@@ -280,10 +280,10 @@ bool __cdecl _close_fsb_nolock(_In_ _file_info** info, _In_ streams::details::_f
                 result = CloseHandle(fInfo->m_handle) != FALSE;
             }
 
-            delete fInfo->m_buffer;
+            utility::allocator<char>().deallocate(fInfo->m_buffer, fInfo->m_bufsize);
         }
 
-        delete fInfo;
+        utility::allocator<_file_info_impl>().destroy(fInfo);
 
         if (result)
             callback->on_closed();
@@ -567,7 +567,7 @@ public:
     virtual void on_completed(size_t result)
     {
         m_func(result);
-        delete this;
+        utility::delete_pointer(this);
     }
 
 private:
@@ -578,7 +578,7 @@ private:
 template<typename Func>
 _filestream_callback_fill_buffer<Func>* create_callback(_In_ _file_info* info, const Func& func)
 {
-    return new _filestream_callback_fill_buffer<Func>(info, func);
+    return utility::make_pointer<_filestream_callback_fill_buffer<Func>>(info, func);
 }
 
 size_t _fill_buffer_fsb(_In_ _file_info_impl* fInfo,
@@ -590,10 +590,10 @@ size_t _fill_buffer_fsb(_In_ _file_info_impl* fInfo,
 
     if (fInfo->m_buffer == nullptr || safeCount > fInfo->m_bufsize)
     {
-        if (fInfo->m_buffer != nullptr) delete fInfo->m_buffer;
+        if (fInfo->m_buffer != nullptr) utility::allocator<char>().deallocate(fInfo->m_buffer, fInfo->m_bufsize);
 
         fInfo->m_bufsize = safeCount.Max(fInfo->m_buffer_size);
-        fInfo->m_buffer = new char[fInfo->m_bufsize * char_size];
+        fInfo->m_buffer = utility::allocator<char>().allocate(fInfo->m_bufsize * char_size);
         fInfo->m_bufoff = fInfo->m_rdpos;
 
         auto cb = create_callback(fInfo, [=](size_t result) {
@@ -616,7 +616,7 @@ size_t _fill_buffer_fsb(_In_ _file_info_impl* fInfo,
 
             case (-1):
                 // error
-                delete cb;
+                utility::delete_pointer(cb);
                 return read;
 
             default:
@@ -668,7 +668,7 @@ size_t _fill_buffer_fsb(_In_ _file_info_impl* fInfo,
 
             case (-1):
                 // error
-                delete cb;
+                utility::delete_pointer(cb);
                 return read;
 
             default:
@@ -687,13 +687,13 @@ size_t _fill_buffer_fsb(_In_ _file_info_impl* fInfo,
 
         // Then, we allocate a new buffer.
 
-        char* newbuf = new char[fInfo->m_bufsize * char_size];
+        char *newbuf = utility::allocator<char>().allocate(fInfo->m_bufsize * char_size);
 
         // Then, we copy the unread part to the new buffer and delete the old buffer
 
         if (bufrem > 0) memcpy(newbuf, fInfo->m_buffer + bufpos * char_size, bufrem * char_size);
 
-        delete fInfo->m_buffer;
+        utility::allocator<char>().deallocate(fInfo->m_buffer, fInfo->m_bufsize);
         fInfo->m_buffer = newbuf;
 
         // Then, we read the remainder of the count into the new buffer
@@ -719,7 +719,7 @@ size_t _fill_buffer_fsb(_In_ _file_info_impl* fInfo,
 
             case (-1):
                 // error
-                delete cb;
+                utility::delete_pointer(cb);
                 return read;
 
             default:
@@ -869,7 +869,7 @@ size_t __cdecl _seekrdpos_fsb(_In_ streams::details::_file_info* info, size_t po
 
     if (pos < fInfo->m_bufoff || pos > (fInfo->m_bufoff + fInfo->m_buffill))
     {
-        delete fInfo->m_buffer;
+        utility::allocator<char>().deallocate(fInfo->m_buffer, fInfo->m_bufsize);
         fInfo->m_buffer = nullptr;
         fInfo->m_bufoff = fInfo->m_buffill = fInfo->m_bufsize = 0;
     }
@@ -898,7 +898,7 @@ size_t __cdecl _seekrdtoend_fsb(_In_ streams::details::_file_info* info, int64_t
     if (fInfo->m_buffer != nullptr)
     {
         // Clear the internal buffer.
-        delete fInfo->m_buffer;
+        utility::allocator<char>().deallocate(fInfo->m_buffer, fInfo->m_bufsize);
         fInfo->m_buffer = nullptr;
         fInfo->m_bufoff = fInfo->m_buffill = fInfo->m_bufsize = 0;
     }

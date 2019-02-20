@@ -92,6 +92,8 @@ public:
     typedef typename basic_streambuf<_CharType>::pos_type pos_type;
     typedef typename basic_streambuf<_CharType>::off_type off_type;
 
+    basic_file_buffer(_In_ _file_info* info) : streambuf_state_manager<_CharType>(info->m_mode), m_info(info) {}
+
     virtual ~basic_file_buffer()
     {
         if (this->can_read())
@@ -193,11 +195,11 @@ protected:
     static pplx::task<void> _close_file(_In_ _file_info* fileInfo)
     {
         pplx::task_completion_event<void> result_tce;
-        auto callback = new _filestream_callback_close(result_tce);
+        auto callback = utility::make_pointer<_filestream_callback_close>(result_tce);
 
         if (!_close_fsb_nolock(&fileInfo, callback))
         {
-            delete callback;
+            utility::delete_pointer<_filestream_callback_close>(callback);
             return pplx::task_from_result();
         }
         return pplx::create_task(result_tce);
@@ -266,24 +268,24 @@ protected:
     virtual pplx::task<int_type> _putc(_CharType ch)
     {
         auto result_tce = pplx::task_completion_event<size_t>();
-        auto callback = new _filestream_callback_write<size_t>(m_info, result_tce);
+        auto callback = utility::make_pointer<_filestream_callback_write<size_t>>(m_info, result_tce);
 
         // Potentially we should consider deprecating this API, it is TERRIBLY inefficient.
         std::shared_ptr<_CharType> sharedCh;
         try
         {
-            sharedCh = std::make_shared<_CharType>(ch);
+            sharedCh = utility::make_shared<_CharType>(ch);
         }
         catch (const std::bad_alloc&)
         {
-            delete callback;
+            utility::delete_pointer<_filestream_callback_write<size_t>>(callback);
             throw;
         }
 
         size_t written = _putn_fsb(m_info, callback, sharedCh.get(), 1, sizeof(_CharType));
         if (written == sizeof(_CharType))
         {
-            delete callback;
+            utility::delete_pointer<_filestream_callback_write<size_t>>(callback);
             return pplx::task_from_result<int_type>(ch);
         }
 
@@ -341,13 +343,13 @@ protected:
     virtual pplx::task<size_t> _putn(const _CharType* ptr, size_t count)
     {
         auto result_tce = pplx::task_completion_event<size_t>();
-        auto callback = new _filestream_callback_write<size_t>(m_info, result_tce);
+        auto callback = utility::make_pointer<_filestream_callback_write<size_t>>(m_info, result_tce);
 
         size_t written = _putn_fsb(m_info, callback, ptr, count, sizeof(_CharType));
 
         if (written != 0 && written != size_t(-1))
         {
-            delete callback;
+            utility::delete_pointer<_filestream_callback_write<size_t>>(callback);
             written = written / sizeof(_CharType);
             return pplx::task_from_result<size_t>(written);
         }
@@ -359,7 +361,7 @@ protected:
     {
         if (copy)
         {
-            auto sharedData = std::make_shared<std::vector<_CharType>>(ptr, ptr + count);
+            auto sharedData = utility::make_shared<utility::vector<_CharType>>(ptr, ptr + count);
             return _putn(ptr, count).then([sharedData](size_t size) { return size; });
         }
         else
@@ -391,7 +393,7 @@ protected:
             }
 
             auto result_tce = pplx::task_completion_event<int_type>();
-            auto callback = new _filestream_callback_bumpc(m_info, result_tce);
+            auto callback = utility::make_pointer<_filestream_callback_bumpc>(m_info, result_tce);
 
             size_t ch = _getn_fsb(m_info, callback, &callback->m_ch, 1, sizeof(_CharType));
 
@@ -400,7 +402,7 @@ protected:
                 pplx::extensibility::scoped_recursive_lock_t lck(m_info->m_lock);
                 m_info->m_rdpos += 1;
                 _CharType ch1 = (_CharType)callback->m_ch;
-                delete callback;
+                utility::delete_pointer<_filestream_callback_bumpc>(callback);
                 return pplx::task_from_result<int_type>(ch1);
             }
             return pplx::create_task(result_tce);
@@ -446,7 +448,7 @@ protected:
         }
 
         auto result_tce = pplx::task_completion_event<int_type>();
-        auto callback = new _filestream_callback_getc(m_info, result_tce);
+        auto callback = utility::make_pointer<_filestream_callback_getc>(m_info, result_tce);
 
         size_t ch = _getn_fsb(m_info, callback, &callback->m_ch, 1, sizeof(_CharType));
 
@@ -454,7 +456,7 @@ protected:
         {
             pplx::extensibility::scoped_recursive_lock_t lck(m_info->m_lock);
             _CharType ch1 = (_CharType)callback->m_ch;
-            delete callback;
+            utility::delete_pointer<_filestream_callback_getc>(callback);
             return pplx::task_from_result<int_type>(ch1);
         }
         return pplx::create_task(result_tce);
@@ -548,13 +550,13 @@ protected:
             }
 
             auto result_tce = pplx::task_completion_event<size_t>();
-            auto callback = new _filestream_callback_read(m_info, result_tce);
+            auto callback = utility::make_pointer<_filestream_callback_read>(m_info, result_tce);
 
             size_t read = _getn_fsb(m_info, callback, ptr, count, sizeof(_CharType));
 
             if (read != 0 && read != size_t(-1))
             {
-                delete callback;
+                utility::delete_pointer<_filestream_callback_read>(callback);
                 pplx::extensibility::scoped_recursive_lock_t lck(m_info->m_lock);
                 m_info->m_rdpos += read / sizeof(_CharType);
                 return pplx::task_from_result<size_t>(read / sizeof(_CharType));
@@ -708,8 +710,6 @@ private:
         return pplx::create_task(result_tce);
     }
 
-    basic_file_buffer(_In_ _file_info* info) : streambuf_state_manager<_CharType>(info->m_mode), m_info(info) {}
-
 #if !defined(__cplusplus_winrt)
     static pplx::task<std::shared_ptr<basic_streambuf<_CharType>>> open(
         const utility::string_t& _Filename,
@@ -722,7 +722,7 @@ private:
     )
     {
         auto result_tce = pplx::task_completion_event<std::shared_ptr<basic_streambuf<_CharType>>>();
-        auto callback = new _filestream_callback_open(result_tce);
+        auto callback = utility::make_pointer<_filestream_callback_open>(result_tce);
         _open_fsb_str(callback, _Filename.c_str(), _Mode, _Prot);
         return pplx::create_task(result_tce);
     }
@@ -732,7 +732,7 @@ private:
         ::Windows::Storage::StorageFile ^ file, std::ios_base::openmode _Mode = std::ios_base::out)
     {
         auto result_tce = pplx::task_completion_event<std::shared_ptr<basic_streambuf<_CharType>>>();
-        auto callback = new _filestream_callback_open(result_tce);
+        auto callback = utility::make_pointer<_filestream_callback_open>(result_tce);
         _open_fsb_stf_str(callback, file, _Mode, 0);
         return pplx::create_task(result_tce);
     }
@@ -748,14 +748,14 @@ private:
 
         virtual void on_opened(_In_ _file_info* info)
         {
-            m_op.set(std::shared_ptr<basic_file_buffer<_CharType>>(new basic_file_buffer<_CharType>(info)));
-            delete this;
+            m_op.set(utility::make_shared<basic_file_buffer<_CharType>>(info));
+            utility::delete_pointer<_filestream_callback_open>(this);
         }
 
         virtual void on_error(const std::exception_ptr& e)
         {
             m_op.set_exception(e);
-            delete this;
+            utility::delete_pointer<_filestream_callback_open>(this);
         }
 
     private:
@@ -770,13 +770,13 @@ private:
         virtual void on_closed()
         {
             m_op.set();
-            delete this;
+            utility::delete_pointer<_filestream_callback_close>(this);
         }
 
         virtual void on_error(const std::exception_ptr& e)
         {
             m_op.set_exception(e);
-            delete this;
+            utility::delete_pointer<_filestream_callback_close>(this);
         }
 
     private:
@@ -795,13 +795,13 @@ private:
         virtual void on_completed(size_t result)
         {
             m_op.set((ResultType)result / sizeof(_CharType));
-            delete this;
+            utility::delete_pointer<_filestream_callback_write>(this);
         }
 
         virtual void on_error(const std::exception_ptr& e)
         {
             m_op.set_exception(e);
-            delete this;
+            utility::delete_pointer<_filestream_callback_write>(this);
         }
 
     private:
@@ -820,13 +820,13 @@ private:
         virtual void on_completed(size_t)
         {
             m_op.set();
-            delete this;
+            utility::delete_pointer<_filestream_callback_write_b>(this);
         }
 
         virtual void on_error(const std::exception_ptr& e)
         {
             m_op.set_exception(e);
-            delete this;
+            utility::delete_pointer<_filestream_callback_write_b>(this);
         }
 
     private:
@@ -847,13 +847,13 @@ private:
             result = result / sizeof(_CharType);
             m_info->m_rdpos += result;
             m_op.set(result);
-            delete this;
+            utility::delete_pointer<_filestream_callback_read>(this);
         }
 
         virtual void on_error(const std::exception_ptr& e)
         {
             m_op.set_exception(e);
-            delete this;
+            utility::delete_pointer<_filestream_callback_read>(this);
         }
 
     private:
@@ -880,13 +880,13 @@ private:
             {
                 m_op.set(traits::eof());
             }
-            delete this;
+            utility::delete_pointer<_filestream_callback_bumpc>(this);
         }
 
         virtual void on_error(const std::exception_ptr& e)
         {
             m_op.set_exception(e);
-            delete this;
+            utility::delete_pointer<_filestream_callback_bumpc>(this);
         }
 
         int_type m_ch;
@@ -914,7 +914,7 @@ private:
             {
                 m_op.set(traits::eof());
             }
-            delete this;
+            utility::delete_pointer<_filestream_callback_getc>(this);
         }
 
         int_type m_ch;
@@ -922,7 +922,7 @@ private:
         virtual void on_error(const std::exception_ptr& e)
         {
             m_op.set_exception(e);
-            delete this;
+            utility::delete_pointer<_filestream_callback_getc>(this);
         }
 
     private:

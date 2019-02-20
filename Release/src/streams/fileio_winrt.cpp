@@ -98,9 +98,7 @@ void _finish_create(Streams::IRandomAccessStream ^ stream,
                     std::ios_base::openmode mode,
                     int prot)
 {
-    _file_info_impl* info = nullptr;
-
-    info = new _file_info_impl(stream, mode, 512);
+    _file_info_impl* info = utility::make_pointer<_file_info_impl>(stream, mode, 512);
 
     // Seek to end if it's in appending write mode
     if ((mode & std::ios_base::out) && (mode & std::ios_base::app || mode & std::ios_base::ate))
@@ -218,7 +216,7 @@ bool __cdecl _close_fsb_nolock(_In_ _file_info** info,
             try
             {
                 // The lock fInfo->m_lock must not be held at this point
-                delete fInfo;
+                utility::delete_pointer<_file_info_impl>(fInfo);
                 t.wait();
                 callback->on_closed();
             }
@@ -231,7 +229,7 @@ bool __cdecl _close_fsb_nolock(_In_ _file_info** info,
     else
     {
         // The lock fInfo->m_lock must not be held at this point
-        delete fInfo;
+        utility::delete_pointer<_file_info_impl>(fInfo);
         callback->on_closed();
     }
     return true;
@@ -300,7 +298,7 @@ public:
     virtual void on_completed(size_t result)
     {
         m_func(result);
-        delete this;
+        utility::delete_pointer(this);
     }
 
 private:
@@ -323,7 +321,8 @@ size_t _fill_buffer_fsb(_In_ _file_info_impl* fInfo,
 
     if (fInfo->m_buffer == nullptr || safeCount > fInfo->m_bufsize)
     {
-        if (fInfo->m_buffer != nullptr) delete fInfo->m_buffer;
+        if (fInfo->m_buffer != nullptr)
+            utility::allocator<char>().deallocate(fInfo->m_buffer, fInfo->m_bufsize);
 
         fInfo->m_bufsize = safeCount.Max(fInfo->m_buffer_size);
         fInfo->m_buffer = new char[fInfo->m_bufsize * char_size];
@@ -348,7 +347,7 @@ size_t _fill_buffer_fsb(_In_ _file_info_impl* fInfo,
 
             case (-1):
                 // error
-                delete cb;
+                utility::delete_pointer(cb);
                 return read;
 
             default:
@@ -399,7 +398,7 @@ size_t _fill_buffer_fsb(_In_ _file_info_impl* fInfo,
 
             case (-1):
                 // error
-                delete cb;
+                utility::delete_pointer(cb);
                 return read;
 
             default:
@@ -424,7 +423,7 @@ size_t _fill_buffer_fsb(_In_ _file_info_impl* fInfo,
 
         if (bufrem > 0) memcpy(newbuf, fInfo->m_buffer + bufpos * char_size, bufrem * char_size);
 
-        delete fInfo->m_buffer;
+        utility::allocator<char>().deallocate(fInfo->m_buffer, fInfo->m_bufsize);
         fInfo->m_buffer = newbuf;
 
         // Then, we read the remainder of the count into the new buffer
@@ -452,7 +451,7 @@ size_t _fill_buffer_fsb(_In_ _file_info_impl* fInfo,
 
             case (-1):
                 // error
-                delete cb;
+                utility::delete_pointer(cb);
                 return read;
 
             default:
@@ -627,7 +626,7 @@ size_t __cdecl _seekrdpos_fsb(_In_ Concurrency::streams::details::_file_info* in
 
     if (pos < fInfo->m_bufoff || pos > (fInfo->m_bufoff + fInfo->m_buffill))
     {
-        delete fInfo->m_buffer;
+        utility::allocator<char>().deallocate(fInfo->m_buffer, fInfo->m_bufsize);
         fInfo->m_buffer = nullptr;
         fInfo->m_bufoff = fInfo->m_buffill = fInfo->m_bufsize = 0;
     }

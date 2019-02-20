@@ -90,7 +90,7 @@ bool _finish_create(int fh, _filestream_callback* callback, std::ios_base::openm
             lseek(fh, 0, SEEK_END);
         }
 
-        auto info = new _file_info_impl(fh, mode, buffer);
+        auto info = utility::make_pointer<_file_info_impl>(fh, mode, buffer);
 
         if (mode & std::ios_base::app || mode & std::ios_base::ate)
         {
@@ -345,13 +345,13 @@ public:
     virtual void on_completed(size_t result) override
     {
         m_func(result);
-        delete this;
+        utility::delete_pointer(this);
     }
     virtual void on_error(const std::exception_ptr& e) override
     {
         auto exptr = std::make_exception_ptr(e);
         m_callback->on_error(exptr);
-        delete this;
+        utility::delete_pointer(this);
     }
 
 private:
@@ -365,7 +365,7 @@ _filestream_callback_fill_buffer<Func>* create_callback(_file_info* info,
                                                         _filestream_callback* callback,
                                                         const Func& func)
 {
-    return new _filestream_callback_fill_buffer<Func>(info, callback, func);
+    return utility::make_pointer<_filestream_callback_fill_buffer<Func>>(info, callback, func);
 }
 
 static const size_t PageSize = 512;
@@ -406,7 +406,7 @@ size_t _fill_buffer_fsb(_file_info_impl* fInfo, _filestream_callback* callback, 
 
         if (bufrem > 0) memcpy(newbuf, fInfo->m_buffer + bufpos * charSize, bufrem * charSize);
 
-        delete[] fInfo->m_buffer;
+        delete [] fInfo->m_buffer;
         fInfo->m_buffer = newbuf;
 
         // Then, we read the remainder of the count into the new buffer
@@ -562,7 +562,7 @@ size_t _seekrdtoend_fsb(Concurrency::streams::details::_file_info* info, int64_t
 
     if (fInfo->m_buffer != nullptr)
     {
-        delete[] fInfo->m_buffer;
+        delete [] fInfo->m_buffer;
         fInfo->m_buffer = nullptr;
         fInfo->m_bufoff = fInfo->m_buffill = fInfo->m_bufsize = 0;
     }
@@ -587,7 +587,7 @@ utility::size64_t _get_size(_In_ concurrency::streams::details::_file_info* info
 
     if (fInfo->m_buffer != nullptr)
     {
-        delete[] fInfo->m_buffer;
+        delete [] fInfo->m_buffer;
         fInfo->m_buffer = nullptr;
         fInfo->m_bufoff = fInfo->m_buffill = fInfo->m_bufsize = 0;
     }
@@ -623,7 +623,7 @@ size_t _seekrdpos_fsb(Concurrency::streams::details::_file_info* info, size_t po
 
     if (pos < fInfo->m_bufoff || pos > (fInfo->m_bufoff + fInfo->m_buffill))
     {
-        delete[] fInfo->m_buffer;
+        delete [] fInfo->m_buffer;
         fInfo->m_buffer = nullptr;
         fInfo->m_bufoff = fInfo->m_buffill = fInfo->m_bufsize = 0;
     }

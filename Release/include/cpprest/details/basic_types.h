@@ -349,6 +349,22 @@ inline std::shared_ptr<_Ty> make_shared(_Types&&... _Args) {
     return std::allocate_shared<_Ty, _Alloc>(_Alloc(), std::forward<_Types>(_Args)...);
 }
 
+// TEMPLATE FUNCTION make_pointer
+template<typename _Ty, typename _Alloc = utility::allocator<_Ty>, typename... _Types>
+inline _Ty* make_pointer(_Types&&... _Args) {
+    // make a shared_ptr
+    _Ty* ptr = _Alloc().allocate(1);
+    _Alloc().construct(ptr, std::forward<_Types>(_Args)...);
+    return ptr;
+}
+
+template<typename _Ty, typename _Alloc = utility::allocator<_Ty>>
+inline void delete_pointer(_Ty* _Ptr) {
+    // make a shared_ptr
+    _Alloc().destroy(_Ptr);
+    _Alloc().deallocate(_Ptr, 1);
+    return;
+}
 
 template<class _Ty, class _Alloc = utility::allocator<_Ty>>
 using vector = std::vector<_Ty, _Alloc>;

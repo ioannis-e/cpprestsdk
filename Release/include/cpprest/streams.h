@@ -244,7 +244,7 @@ public:
                     source.release(data, 0);
                 }
 
-                std::shared_ptr<CharType> buf(new CharType[count], [](CharType* buf) { delete[] buf; });
+                    std::shared_ptr<CharType> buf = utility::make_shared<CharType>(count);
 
                 auto post_write = [buf](pplx::task<size_t> op) -> pplx::task<size_t> { return op; };
                 auto post_read = [buf, post_write, buffer](pplx::task<size_t> op) -> pplx::task<size_t> {
@@ -727,7 +727,7 @@ public:
                     buffer.release(data, 0);
                 }
 
-                std::shared_ptr<CharType> buf(new CharType[count], [](CharType* buf) { delete[] buf; });
+                    std::shared_ptr<CharType> buf = utility::make_shared<CharType>(count);
 
                 auto post_write = [buf](pplx::task<size_t> op) -> pplx::task<size_t> { return op; };
                 auto post_read = [buf, target, post_write](pplx::task<size_t> op) -> pplx::task<size_t> {

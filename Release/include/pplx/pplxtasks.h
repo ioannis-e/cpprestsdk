@@ -16,6 +16,7 @@
 #ifndef PPLXTASKS_H
 #define PPLXTASKS_H
 
+#include "cpprest/details/basic_types.h"
 #include "cpprest/details/cpprest_compat.h"
 
 #if (defined(_MSC_VER) && (_MSC_VER >= 1800)) && !CPPREST_FORCE_PPLX
