@@ -157,8 +157,7 @@ public:
     template<typename AlterCharType>
     stdio_ostream(std::basic_ostream<AlterCharType>& stream)
         : basic_ostream<CharType>(
-              streams::streambuf<AlterCharType>(std::shared_ptr<details::basic_stdio_buffer<AlterCharType>>(
-                  new details::basic_stdio_buffer<AlterCharType>(stream.rdbuf(), std::ios_base::out))))
+              streams::streambuf<AlterCharType>(utility::make_shared<details::basic_stdio_buffer<AlterCharType>>(stream.rdbuf(), std::ios_base::out)))
     {
     }
 
@@ -207,8 +206,7 @@ public:
     template<typename AlterCharType>
     stdio_istream(std::basic_istream<AlterCharType>& stream)
         : basic_istream<CharType>(
-              streams::streambuf<AlterCharType>(std::shared_ptr<details::basic_stdio_buffer<AlterCharType>>(
-                  new details::basic_stdio_buffer<AlterCharType>(stream.rdbuf(), std::ios_base::in))))
+              streams::streambuf<AlterCharType>(utility::make_shared<details::basic_stdio_buffer<AlterCharType>>(stream.rdbuf(), std::ios_base::in)))
     {
     }
 

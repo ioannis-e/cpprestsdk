@@ -247,7 +247,7 @@ utility::string_t print_string(const Source& val)
     {
         throw std::bad_cast();
     }
-    return oss.str();
+    return std::move(oss.str());
 }
 
 inline const utility::string_t& print_string(const utility::string_t& val) { return val; }
@@ -255,7 +255,7 @@ inline const utility::string_t& print_string(const utility::string_t& val) { ret
 template<typename Source>
 utf8string print_utf8string(const Source& val)
 {
-    return conversions::to_utf8string(print_string(val));
+    return std::move(conversions::to_utf8string(print_string(val)));
 }
 inline const utf8string& print_utf8string(const utf8string& val) { return val; }
 

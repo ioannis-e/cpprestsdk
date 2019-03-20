@@ -489,8 +489,7 @@ public:
     /// <param name="mode">The I/O mode that the buffer should use (in / out)</param>
     container_buffer(_CollectionType data, std::ios_base::openmode mode = std::ios_base::in)
         : streambuf<typename _CollectionType::value_type>(
-              std::shared_ptr<details::basic_container_buffer<_CollectionType>>(
-                  new streams::details::basic_container_buffer<_CollectionType>(std::move(data), mode)))
+              utility::make_shared<streams::details::basic_container_buffer<_CollectionType>>(std::move(data), mode))
     {
     }
 
@@ -500,8 +499,7 @@ public:
     /// <param name="mode">The I/O mode that the buffer should use (in / out)</param>
     container_buffer(std::ios_base::openmode mode = std::ios_base::out)
         : streambuf<typename _CollectionType::value_type>(
-              std::shared_ptr<details::basic_container_buffer<_CollectionType>>(
-                  new details::basic_container_buffer<_CollectionType>(mode)))
+              utility::make_shared<details::basic_container_buffer<_CollectionType>>(mode))
     {
     }
 
