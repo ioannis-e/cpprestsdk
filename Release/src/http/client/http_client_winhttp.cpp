@@ -1027,7 +1027,7 @@ protected:
             http::uri_builder(m_uri).append(msg.relative_uri()).to_uri().resource().to_string();
 
         // Open the request.
-        winhttp_context->m_request_handle_context = new std::weak_ptr<winhttp_request_context>(winhttp_context);
+        winhttp_context->m_request_handle_context = utility::make_pointer<std::weak_ptr<winhttp_request_context>>(winhttp_context);
 
         winhttp_context->m_request_handle =
             WinHttpOpenRequest(m_hConnection,

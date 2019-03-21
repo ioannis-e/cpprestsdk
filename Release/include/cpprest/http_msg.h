@@ -264,7 +264,7 @@ public:
     /// </summary>
     /// <param name="errorCode">Error code value.</param>
     /// <param name="whatArg">Error message string.</param>
-    http_exception(std::error_code errorCode, std::string whatArg)
+    http_exception(std::error_code errorCode, utility::string whatArg)
         : m_errorCode(std::move(errorCode)), m_msg(std::move(whatArg))
     {
     }
