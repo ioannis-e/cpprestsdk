@@ -94,7 +94,7 @@ static http::status_code parse_status_code(HINTERNET request_handle)
 {
     DWORD length = 0;
     query_header_length(request_handle, WINHTTP_QUERY_STATUS_CODE, length);
-    utility::string_t buffer;
+    std::wstring buffer;
     buffer.resize(length);
     WinHttpQueryHeaders(request_handle,
                         WINHTTP_QUERY_STATUS_CODE,
@@ -146,7 +146,7 @@ static utility::string build_error_msg(unsigned long code, const utility::string
     msg.append(": ");
     msg.append(utility::conversions::details::to_string(code));
     msg.append(": ");
-    msg.append(utility::details::platform_category().message(static_cast<int>(code)));
+    msg.append(utility::details::platform_category().message(static_cast<int>(code)).c_str());
     return msg;
 }
 

@@ -409,7 +409,7 @@ public:
     /// </summary>
     /// <param name="value">The C++ value to create a JSON value from, a C++ STL string in
     /// UTF8 format</param>
-    _ASYNCRTIMP static value __cdecl parse(const std::string& value);
+    _ASYNCRTIMP static value __cdecl parse(const utility::string& value);
 
     /// <summary>
     /// Attempts to parse a string and construct a JSON value.
@@ -418,7 +418,7 @@ public:
     /// UTF8 format</param>
     /// <param name="errorCode">If parsing fails, the error code is greater than 0</param>
     /// <returns>The parsed object. Returns web::json::value::null if failed</returns>
-    _ASYNCRTIMP static value __cdecl parse(const std::string& value, std::error_code& errorCode);
+    _ASYNCRTIMP static value __cdecl parse(const utility::string& value, std::error_code& errorCode);
 #endif
 
     /// <summary>

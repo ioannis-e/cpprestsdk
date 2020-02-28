@@ -333,7 +333,7 @@ public:
                 websocket_incoming_message incoming_msg;
 
                 incoming_msg.m_msg_type = websocket_message_type::ping;
-                incoming_msg.m_body = concurrency::streams::container_buffer<std::string>(msg);
+                incoming_msg.m_body = concurrency::streams::container_buffer<utility::string>(msg.c_str());
 
                 m_external_message_handler(incoming_msg);
             }
@@ -347,7 +347,7 @@ public:
                 websocket_incoming_message incoming_msg;
 
                 incoming_msg.m_msg_type = websocket_message_type::pong;
-                incoming_msg.m_body = concurrency::streams::container_buffer<std::string>(msg);
+                incoming_msg.m_body = concurrency::streams::container_buffer<utility::string>(msg.c_str());
 
                 m_external_message_handler(incoming_msg);
             }

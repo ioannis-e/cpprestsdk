@@ -21,7 +21,7 @@ namespace details
 utility::string_t get_default_reason_phrase(status_code code);
 
 template<class Char, class Fn>
-void trim_if(std::basic_string<Char>& str, Fn test)
+void trim_if(utility::basic_string<Char>& str, Fn test)
 {
     if (str.empty())
     {
@@ -76,7 +76,7 @@ void trim_if(std::basic_string<Char>& str, Fn test)
 }
 
 template<class Char>
-void trim_nulls(std::basic_string<Char>& str)
+void trim_nulls(utility::basic_string<Char>& str)
 {
     trim_if(str, [](const Char c) { return c == Char {}; });
 }
@@ -84,7 +84,7 @@ void trim_nulls(std::basic_string<Char>& str)
 template<class Char>
 void trim_whitespace(utility::basic_string<Char>& str)
 {
-    trim_if(str, [](const Char c) { return ::utility::details::is_space(c); });
+    trim_if(str, [](const Char c) { return utility::details::is_space(c); });
 }
 
 bool validate_method(const utility::string_t& method);

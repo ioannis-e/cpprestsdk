@@ -1169,7 +1169,7 @@ static web::json::value _parse_stream(std::basic_istream<CharType>& stream, std:
 }
 
 template<typename CharType>
-static web::json::value _parse_string(const std::basic_string<CharType>& str)
+static web::json::value _parse_string(const utility::basic_string<CharType>& str)
 {
     web::json::details::JSON_StringParser<CharType> parser(str);
     typename web::json::details::JSON_Parser<CharType>::Token tkn;
@@ -1194,7 +1194,7 @@ static web::json::value _parse_string(const std::basic_string<CharType>& str)
 }
 
 template<typename CharType>
-static web::json::value _parse_string(const std::basic_string<CharType>& str, std::error_code& error)
+static web::json::value _parse_string(const utility::basic_string<CharType>& str, std::error_code& error)
 {
     web::json::details::JSON_StringParser<CharType> parser(str);
     typename web::json::details::JSON_Parser<CharType>::Token tkn;
@@ -1232,9 +1232,9 @@ web::json::value web::json::value::parse(utility::istream_t& stream, std::error_
 }
 
 #ifdef _WIN32
-web::json::value web::json::value::parse(const std::string& str) { return _parse_string(str); }
+web::json::value web::json::value::parse(const utility::string& str) { return _parse_string(str); }
 
-web::json::value web::json::value::parse(const std::string& str, std::error_code& error)
+web::json::value web::json::value::parse(const utility::string& str, std::error_code& error)
 {
     return _parse_string(str, error);
 }
